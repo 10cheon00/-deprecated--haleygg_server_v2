@@ -1,3 +1,5 @@
+import os
+
 from haleygg_server.settings.base import *
 
 
@@ -13,3 +15,5 @@ MIDDLEWARE += [
 ]
 
 DEBUG = True
+
+STATICFILES_DIRS = (os.path.join("static"),)

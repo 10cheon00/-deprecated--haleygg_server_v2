@@ -1,12 +1,8 @@
-from django.db import IntegrityError
-from rest_framework import mixins
-from rest_framework.viewsets import GenericViewSet
 from rest_framework.viewsets import ModelViewSet
 
 from server.models import League
 from server.models import Map
 from server.models import Match
-from server.models import Player
 from server.models import Profile
 from server.serializers import MatchSerializer
 from server.serializers import MapSerializer
@@ -29,11 +25,10 @@ class MapViewSet(ModelViewSet):
     queryset = Map.objects.all()
 
 
-class MatchViewSet(
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
-):
-    queryset = Match.objects.all()
+class MatchViewSet(ModelViewSet):
+    queryset = (
+        Match.objects.select_related("league", "map")
+        .prefetch_related("players", "players__profile")
+        .all()
+    )
     serializer_class = MatchSerializer

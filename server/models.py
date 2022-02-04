@@ -20,7 +20,7 @@ class Map(models.Model):
 class Profile(models.Model):
     RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
     career = models.TextField(default="", max_length=1000)
-    favorate_race = models.CharField(choices=RACE_LIST, default="P", max_length=30)
+    favorate_race = models.CharField(choices=RACE_LIST, default="", max_length=10)
     name = models.CharField(default="", max_length=30)
     joined_date = models.DateField(default=timezone.now)
 
@@ -46,9 +46,15 @@ class Match(models.Model):
 
 
 class Player(models.Model):
+    RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="players")
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    race = models.CharField(choices=RACE_LIST, default="", max_length=10)
     win_state = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.match.__str__()} - {self.profile.__str__()}"
+        win_state_str = "승"
+        if not self.win_state:
+            win_state_str = "패"
+
+        return f"{self.match.__str__()} / {self.profile.__str__()} ({self.race}) {win_state_str}"

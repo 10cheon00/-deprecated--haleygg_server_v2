@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework import exceptions
 
@@ -35,19 +34,64 @@ class ProfileSerializer(serializers.ModelSerializer):
         }
 
 
+class PlayerListSerializer(serializers.ListSerializer):
+    def create(self, validated_data, match):
+        players = [
+            Player(
+                match=match,
+                profile=player.get("profile"),
+                win_state=player.get("win_state"),
+                race=player.get("race"),
+            )
+            for player in validated_data
+        ]
+        return Player.objects.bulk_create(objs=players)
+
+    def update(self, instance, validated_data):
+        player_mapping = {player.id: player for player in instance}
+        data_mapping = {data.get("id"): data for data in validated_data}
+
+        player_objects = []
+        try:
+            # TODO
+            # 최적화쿼리 필요
+            for player_id, data in data_mapping.items():
+                player_instance = player_mapping.get(player_id)
+
+                player_instance.profile = data["profile"]
+                player_instance.race = data.get("race")
+                player_instance.win_state = data.get("win_state")
+                player_instance.save()
+                player_objects.append(player_instance)
+        except AttributeError:
+            raise exceptions.ValidationError(detail="잘못된 플레이어를 입력했습니다.")
+        return player_objects
+
+
 class PlayerSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source="profile.name")  # ☆
+    profile = serializers.PrimaryKeyRelatedField(
+        queryset=Profile.objects.all(), required=True
+    )
 
     class Meta:
         model = Player
-        fields = ["id", "name", "win_state"]
-        extra_kwargs = {"name": {"required": True}, "win_state": {"required": True}}
+        fields = ["id", "profile", "race", "win_state"]
+        extra_kwargs = {
+            "id": {"read_only": False},
+            "race": {"required": True},
+            "win_state": {"required": True},
+        }
+        list_serializer_class = PlayerListSerializer
 
 
 class MatchSerializer(serializers.ModelSerializer):
-    league = serializers.CharField(source="league.name")
-    map = serializers.CharField(source="map.name")
-    players = PlayerSerializer(many=True, required=True, allow_empty=False)
+    league = serializers.PrimaryKeyRelatedField(
+        queryset=League.objects.all(), required=True
+    )
+    map = serializers.PrimaryKeyRelatedField(queryset=Map.objects.all(), required=True)
+    players = PlayerSerializer(
+        many=True, required=True, allow_empty=False, min_length=2
+    )
 
     class Meta:
         model = Match
@@ -59,60 +103,45 @@ class MatchSerializer(serializers.ModelSerializer):
             "map",
             "miscellaneous",
             "is_melee_match",
-            "players",  # ☆
+            "players",
         ]
-        extra_kwargs = {
-            "league": {"required": True},
-            "date": {"required": True},
-            "title": {"required": True},
-            "map": {"required": True},
-        }
+        extra_kwargs = {"date": {"required": True}, "title": {"required": True}}
 
     def create(self, validated_data):
-        self.get_data_from_validated_data(validated_data)
+        self.get_data_from_validated_data(validated_data=validated_data)
         self.check_match_already_exists()
         with transaction.atomic():
             self.create_match()
             self.create_players()
         return self.match
 
-    def get_data_from_validated_data(self, validated_data):
-        try:
-            self.league = League.objects.get(
-                name=validated_data.get("league").get("name")
+    def update(self, instance, validated_data):
+        player_validated_data = validated_data.pop("players")
+        player_instances = instance.players.all()
+        player_serializer = PlayerSerializer(many=True)
+
+        with transaction.atomic():
+            player_serializer.update(
+                instance=player_instances, validated_data=player_validated_data
             )
-            self.map = Map.objects.get(name=validated_data.get("map").get("name"))
-            self.date = validated_data.get("date")
             self.title = validated_data.get("title")
-            self.miscellaneous = validated_data.get("miscellaneous")
-            self.is_melee_match = (
-                True if len(validated_data.get("players")) > 2 else False
-            )
-            self.players = validated_data.pop("players")
-            self.find_not_exists_players()
+            self.league = validated_data.get("league")
+            if instance.league != self.league or instance.title != self.title:
+                self.check_match_already_exists()
+            return super().update(instance=instance, validated_data=validated_data)
 
-        except League.DoesNotExist:
-            raise exceptions.NotFound(detail="존재하지 않는 리그입니다.")
-        except Map.DoesNotExist:
-            raise exceptions.NotFound(detail="존재하지 않는 맵입니다.")
-        except Profile.DoesNotExist:
-            raise exceptions.NotFound(detail="존재하지 않는 플레이어입니다.")
-
-    def find_not_exists_players(self):
-        self.player_names = [
-            player.get("profile").get("name") for player in self.players
-        ]
-        profiles = Profile.objects.filter(name__in=self.player_names).values_list(
-            "name", flat=True
-        )
-        duplicated_profile_names = list(set(self.player_names) - set(profiles))
-
-        if duplicated_profile_names:
-            raise Profile.DoesNotExist(duplicated_profile_names)
+    def get_data_from_validated_data(self, validated_data):
+        self.league = validated_data.get("league")
+        self.map = validated_data.get("map")
+        self.date = validated_data.get("date")
+        self.title = validated_data.get("title")
+        self.miscellaneous = validated_data.get("miscellaneous")
+        self.is_melee_match = True if len(validated_data.get("players")) > 2 else False
+        self.players = validated_data.pop("players")
 
     def check_match_already_exists(self):
         if Match.objects.filter(
-            league_id=self.league.id, title__iexact=self.title
+            league=self.league.id, title__iexact=self.title
         ).exists():
             raise exceptions.ParseError(detail="이미 있는 전적입니다.")
 
@@ -127,15 +156,5 @@ class MatchSerializer(serializers.ModelSerializer):
         )
 
     def create_players(self):
-        player_objects = []
-        for player in self.players:
-            player_name = player.get("profile").get("name")
-            player_objects.append(
-                Player(
-                    match=self.match,
-                    profile=Profile.objects.get(name=player_name),
-                    win_state=player.get("win_state"),
-                )
-            )
-
-        Player.objects.bulk_create(player_objects)
+        player_serializer = PlayerSerializer(many=True)
+        player_serializer.create(validated_data=self.players, match=self.match)
