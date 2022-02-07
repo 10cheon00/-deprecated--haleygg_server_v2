@@ -36,6 +36,9 @@ class Match(models.Model):
     miscellaneous = models.CharField(default="", max_length=100, blank=True)
     is_melee_match = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ["-id", "-date", "-title"]
+
     def __str__(self):
         return (
             f"{self.date} - {self.league.__str__()} {self.title} - {self.map.__str__()}"

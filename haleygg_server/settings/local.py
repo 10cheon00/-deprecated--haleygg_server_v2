@@ -10,10 +10,20 @@ INSTALLED_APPS += [
     "server",
 ]
 
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
 MIDDLEWARE += [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 DEBUG = True
 
-STATICFILES_DIRS = (os.path.join("static"),)
+STATIC_ROOT = ""
+
+STATIC_URL = "/static/"
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR),
+]
