@@ -34,12 +34,3 @@ class MatchViewSet(MatchFilterMixin, ModelViewSet):
         .prefetch_related("players", "players__profile")
         .all()
     )
-
-
-    serializer_class = MatchSerializer
-    queryset = (
-        Match.objects.select_related("league", "map")
-        .prefetch_related("players", "players__profile")
-        .all()
-    )
-
