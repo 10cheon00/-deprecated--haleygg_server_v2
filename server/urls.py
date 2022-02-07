@@ -10,7 +10,7 @@ from server.views import ProfileViewSet
 
 router = DefaultRouter()
 router.register(r"maps", MapViewSet)
-router.register(r"matches", MatchViewSet, basename="matches")
+router.register(r"matches", MatchViewSet)
 router.register(r"leagues", LeagueViewSet)
 router.register(r"profiles", ProfileViewSet)
 
