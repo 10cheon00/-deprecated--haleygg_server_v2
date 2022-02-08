@@ -1,3 +1,5 @@
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from server.mixins import MatchFilterMixin
@@ -5,11 +7,12 @@ from server.models import League
 from server.models import Map
 from server.models import Match
 from server.models import Profile
-from server.serializers import MatchSerializer
 from server.serializers import MapSerializer
 from server.serializers import MatchSerializer
 from server.serializers import LeagueSerializer
+from server.serializers import PlayerMatchSummarySerializer
 from server.serializers import ProfileSerializer
+from server.serializers import WinRatioByRaceSerializer
 
 
 class LeagueViewSet(ModelViewSet):
@@ -34,3 +37,31 @@ class MatchViewSet(MatchFilterMixin, ModelViewSet):
         .prefetch_related("players", "players__profile")
         .all()
     )
+
+
+class MatchSummaryView(MatchFilterMixin, GenericAPIView):
+    serializer_class = WinRatioByRaceSerializer
+    queryset = (
+        Match.statistics.select_related("league", "map")
+        .prefetch_related("players", "players__profile")
+        .all()
+    )
+
+    def get_serializer_class(self):
+        if self.profile:
+            return PlayerMatchSummarySerializer
+        return self.serializer_class
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.aggregate_queryset()
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(instance=queryset)
+        return Response(serializer.data)
+
+    def aggregate_queryset(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        profile = self.request.query_params.get("profile")
+        if profile:
+            return queryset.get_player_statistics(profile)
+        else:
+            return queryset.get_win_ratio_by_race()

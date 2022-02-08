@@ -7,7 +7,7 @@ from server.models import Profile
 
 
 class MatchFilterSet(FilterSet):
-    profiles = ModelMultipleChoiceFilter(
+    profile = ModelMultipleChoiceFilter(
         field_name="players__profile",
         to_field_name="id",
         queryset=Profile.objects.all(),
@@ -16,7 +16,7 @@ class MatchFilterSet(FilterSet):
 
     class Meta:
         model = Match
-        fields = ["league", "map", "is_melee_match", "profiles"]
+        fields = ["league", "map", "is_melee_match", "profile"]
 
 
 class MatchFilterMixin(object):
