@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from server.managers import MatchStatisticsQueryset
+from haleygg.managers import MatchStatisticsQueryset
 
 
 class League(models.Model):

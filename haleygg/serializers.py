@@ -2,11 +2,11 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework import exceptions
 
-from server.models import League
-from server.models import Match
-from server.models import Map
-from server.models import Player
-from server.models import Profile
+from haleygg.models import League
+from haleygg.models import Match
+from haleygg.models import Map
+from haleygg.models import Player
+from haleygg.models import Profile
 
 
 class LeagueSerializer(serializers.ModelSerializer):

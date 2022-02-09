@@ -2,17 +2,17 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from server.mixins import MatchFilterMixin
-from server.models import League
-from server.models import Map
-from server.models import Match
-from server.models import Profile
-from server.serializers import MapSerializer
-from server.serializers import MatchSerializer
-from server.serializers import LeagueSerializer
-from server.serializers import PlayerMatchSummarySerializer
-from server.serializers import ProfileSerializer
-from server.serializers import WinRatioByRaceSerializer
+from haleygg.mixins import MatchFilterMixin
+from haleygg.models import League
+from haleygg.models import Map
+from haleygg.models import Match
+from haleygg.models import Profile
+from haleygg.serializers import MapSerializer
+from haleygg.serializers import MatchSerializer
+from haleygg.serializers import LeagueSerializer
+from haleygg.serializers import PlayerMatchSummarySerializer
+from haleygg.serializers import ProfileSerializer
+from haleygg.serializers import WinRatioByRaceSerializer
 
 
 class LeagueViewSet(ModelViewSet):

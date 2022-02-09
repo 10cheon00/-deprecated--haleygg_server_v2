@@ -2,8 +2,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters.rest_framework import FilterSet
 from django_filters.rest_framework import ModelMultipleChoiceFilter
 
-from server.models import Match
-from server.models import Profile
+from haleygg.models import Match
+from haleygg.models import Profile
 
 
 class MatchFilterSet(FilterSet):
