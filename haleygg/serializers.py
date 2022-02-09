@@ -2,11 +2,11 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework import exceptions
 
-from server.models import League
-from server.models import Match
-from server.models import Map
-from server.models import Player
-from server.models import Profile
+from haleygg.models import League
+from haleygg.models import Match
+from haleygg.models import Map
+from haleygg.models import Player
+from haleygg.models import Profile
 
 
 class LeagueSerializer(serializers.ModelSerializer):
@@ -36,16 +36,24 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 class PlayerListSerializer(serializers.ListSerializer):
     def create(self, validated_data, match):
-        players = [
-            Player(
+        opponent = None
+        for player in validated_data:
+            new_player = Player.objects.create(
                 match=match,
                 profile=player.get("profile"),
                 win_state=player.get("win_state"),
                 race=player.get("race"),
             )
-            for player in validated_data
-        ]
-        return Player.objects.bulk_create(objs=players)
+            if opponent:
+                if opponent.profile is new_player.profile:
+                    raise exceptions.ValidationError(detail="잘못된 플레이어를 입력했습니다.")
+                new_player.opponent = opponent
+                opponent.opponent = new_player
+                new_player.save()
+                opponent.save()
+                opponent = None
+            else:
+                opponent = new_player
 
     def update(self, instance, validated_data):
         player_mapping = {player.id: player for player in instance}
@@ -55,12 +63,13 @@ class PlayerListSerializer(serializers.ListSerializer):
         try:
             # TODO
             # 최적화쿼리 필요
+            # 게임 상대 참조 예외처리
             for player_id, data in data_mapping.items():
                 player_instance = player_mapping.get(player_id)
-
                 player_instance.profile = data["profile"]
                 player_instance.race = data.get("race")
                 player_instance.win_state = data.get("win_state")
+
                 player_instance.save()
                 player_objects.append(player_instance)
         except AttributeError:
@@ -110,6 +119,7 @@ class MatchSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         self.get_data_from_validated_data(validated_data=validated_data)
         self.check_match_already_exists()
+
         with transaction.atomic():
             self.create_match()
             self.create_players()
@@ -158,3 +168,25 @@ class MatchSerializer(serializers.ModelSerializer):
     def create_players(self):
         player_serializer = PlayerSerializer(many=True)
         player_serializer.create(validated_data=self.players, match=self.match)
+
+
+class WinRatioByRaceSerializer(serializers.Serializer):
+    protoss_wins_to_terran_count = serializers.IntegerField()
+    protoss_wins_to_zerg_count = serializers.IntegerField()
+    terran_wins_to_protoss_count = serializers.IntegerField()
+    terran_wins_to_zerg_count = serializers.IntegerField()
+    zerg_wins_to_protoss_count = serializers.IntegerField()
+    zerg_wins_to_terran_count = serializers.IntegerField()
+    protoss_loses_to_terran_count = serializers.IntegerField()
+    protoss_loses_to_zerg_count = serializers.IntegerField()
+    terran_loses_to_protoss_count = serializers.IntegerField()
+    terran_loses_to_zerg_count = serializers.IntegerField()
+    zerg_loses_to_protoss_count = serializers.IntegerField()
+    zerg_loses_to_terran_count = serializers.IntegerField()
+
+
+class PlayerMatchSummarySerializer(WinRatioByRaceSerializer):
+    melee_winning_count = serializers.IntegerField()
+    melee_losing_count = serializers.IntegerField()
+    top_and_bottom_winning_count = serializers.IntegerField()
+    top_and_bottom_losing_count = serializers.IntegerField()

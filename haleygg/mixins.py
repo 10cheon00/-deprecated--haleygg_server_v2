@@ -2,12 +2,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters.rest_framework import FilterSet
 from django_filters.rest_framework import ModelMultipleChoiceFilter
 
-from server.models import Match
-from server.models import Profile
+from haleygg.models import Match
+from haleygg.models import Profile
 
 
 class MatchFilterSet(FilterSet):
-    profiles = ModelMultipleChoiceFilter(
+    profile = ModelMultipleChoiceFilter(
         field_name="players__profile",
         to_field_name="id",
         queryset=Profile.objects.all(),
@@ -16,7 +16,7 @@ class MatchFilterSet(FilterSet):
 
     class Meta:
         model = Match
-        fields = ["league", "map", "is_melee_match", "profiles"]
+        fields = ["league", "map", "is_melee_match", "profile"]
 
 
 class MatchFilterMixin(object):

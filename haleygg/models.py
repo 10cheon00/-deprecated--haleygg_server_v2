@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 
+from haleygg.managers import MatchStatisticsQueryset
+
 
 class League(models.Model):
     name = models.CharField(default="", max_length=30)
@@ -36,6 +38,9 @@ class Match(models.Model):
     miscellaneous = models.CharField(default="", max_length=100, blank=True)
     is_melee_match = models.BooleanField(default=True)
 
+    objects = models.Manager()
+    statistics = MatchStatisticsQueryset.as_manager()
+
     class Meta:
         ordering = ["-id", "-date", "-title"]
 
@@ -51,6 +56,9 @@ class Match(models.Model):
 class Player(models.Model):
     RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="players")
+    opponent = models.ForeignKey(
+        "self", blank=True, on_delete=models.CASCADE, null=True
+    )
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     race = models.CharField(choices=RACE_LIST, default="", max_length=10)
     win_state = models.BooleanField(default=False)
