@@ -35,8 +35,7 @@ class PlayerInlineFormset(BaseInlineFormSet):
         if players_count % 2 == 1:
             self.forms[-1].add_error(None, "플레이어 수가 홀수 입니다.")
         elif players_count < 2:
-            for form in self.forms:
-                form.add_error(None, "플레이어 수는 최소 2명 이상이어야 합니다.")
+            self.forms[-1].add_error(None, "최소 2명 이상의 플레이어가 있어야 합니다.")
 
     def save(self, commit=True):
         instances = super().save(commit=commit)
@@ -84,16 +83,6 @@ class MatchForm(ModelForm):
             "map",
             "miscellaneous",
         )
-
-    def clean(self):
-        super().clean()
-        # TODO
-        # Match를 수정할 때 중복체크하는 방법...
-        title = self.cleaned_data["title"]
-        league = self.cleaned_data["league"]
-        if Match.objects.filter(league=league, title=title).exists():
-            self.add_error("league", "이미 같은 이름으로 존재하는 전적입니다. 리그명을 확인해주세요.")
-            self.add_error("title", "이미 같은 이름으로 존재하는 전적입니다. 제목을 확인해주세요.")
 
 
 class MatchAdmin(admin.ModelAdmin):
