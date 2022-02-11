@@ -1,6 +1,6 @@
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from haleygg.mixins import MatchFilterMixin
 from haleygg.models import League
@@ -15,22 +15,22 @@ from haleygg.serializers import ProfileSerializer
 from haleygg.serializers import WinRatioByRaceSerializer
 
 
-class LeagueViewSet(ModelViewSet):
+class LeagueViewSet(ReadOnlyModelViewSet):
     serializer_class = LeagueSerializer
     queryset = League.objects.all()
 
 
-class ProfileViewSet(ModelViewSet):
+class ProfileViewSet(ReadOnlyModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
 
 
-class MapViewSet(ModelViewSet):
+class MapViewSet(ReadOnlyModelViewSet):
     serializer_class = MapSerializer
     queryset = Map.objects.all()
 
 
-class MatchViewSet(MatchFilterMixin, ModelViewSet):
+class MatchViewSet(MatchFilterMixin, ReadOnlyModelViewSet):
     serializer_class = MatchSerializer
     queryset = (
         Match.objects.select_related("league", "map")
@@ -60,8 +60,8 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
 
     def aggregate_queryset(self):
         queryset = self.filter_queryset(self.get_queryset())
-        profile = self.request.query_params.get("profile")
-        if profile:
-            return queryset.get_player_statistics(profile)
+        self.profile = self.request.query_params.get("profile")
+        if self.profile:
+            return queryset.get_player_statistics(self.profile)
         else:
             return queryset.get_win_ratio_by_race()

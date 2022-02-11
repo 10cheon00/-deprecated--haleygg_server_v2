@@ -16,7 +16,7 @@ class MatchFilterSet(FilterSet):
 
     class Meta:
         model = Match
-        fields = ["league", "map", "is_melee_match", "profile"]
+        fields = ["league", "map", "profile", "is_melee_match"]
 
 
 class MatchFilterMixin(object):

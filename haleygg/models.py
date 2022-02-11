@@ -21,7 +21,7 @@ class Map(models.Model):
 
 class Profile(models.Model):
     RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
-    career = models.TextField(default="", max_length=1000)
+    career = models.TextField(default="", max_length=1000, null=True, blank=True)
     favorate_race = models.CharField(choices=RACE_LIST, default="", max_length=10)
     name = models.CharField(default="", max_length=30)
     joined_date = models.DateField(default=timezone.now)
@@ -42,12 +42,10 @@ class Match(models.Model):
     statistics = MatchStatisticsQueryset.as_manager()
 
     class Meta:
-        ordering = ["-id", "-date", "-title"]
+        ordering = ["-date", "-league", "-title"]
 
     def __str__(self):
-        return (
-            f"{self.date} - {self.league.__str__()} {self.title} - {self.map.__str__()}"
-        )
+        return f"Date: {self.date}, League: {self.league_id}, Title: {self.title}, Map: {self.map_id}"
 
     def get_related_players(self):
         return self.players.all()
@@ -57,7 +55,7 @@ class Player(models.Model):
     RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="players")
     opponent = models.ForeignKey(
-        "self", blank=True, on_delete=models.CASCADE, null=True
+        "self", blank=True, on_delete=models.SET_NULL, null=True
     )
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     race = models.CharField(choices=RACE_LIST, default="", max_length=10)
@@ -68,4 +66,4 @@ class Player(models.Model):
         if not self.win_state:
             win_state_str = "패"
 
-        return f"{self.match.__str__()} / {self.profile.__str__()} ({self.race}) {win_state_str}"
+        return f"Match: {self.match_id}, Profile: {self.profile_id}, Race: {self.race}, isWin: {win_state_str}"
