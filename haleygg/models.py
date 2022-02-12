@@ -5,15 +5,15 @@ from haleygg.managers import MatchStatisticsQueryset
 
 
 class League(models.Model):
-    name = models.CharField(default="", max_length=30)
+    name = models.CharField(default="", max_length=30, unique=True)
 
     def __str__(self):
         return self.name
 
 
 class Map(models.Model):
+    name = models.CharField(default="", max_length=30, unique=True)
     image_url = models.URLField(max_length=200, null=True)
-    name = models.CharField(default="", max_length=30)
 
     def __str__(self):
         return self.name
@@ -21,10 +21,10 @@ class Map(models.Model):
 
 class Profile(models.Model):
     RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
-    career = models.TextField(default="", max_length=1000, null=True, blank=True)
-    favorate_race = models.CharField(choices=RACE_LIST, default="", max_length=10)
-    name = models.CharField(default="", max_length=30)
+    name = models.CharField(default="", max_length=30, unique=True)
     joined_date = models.DateField(default=timezone.now)
+    favorate_race = models.CharField(choices=RACE_LIST, default="", max_length=10)
+    career = models.TextField(default="", max_length=1000, null=True, blank=True)
 
     def __str__(self):
         return self.name
