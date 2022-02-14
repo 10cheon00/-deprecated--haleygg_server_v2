@@ -19,8 +19,8 @@ class LeagueSerializer(serializers.ModelSerializer):
 class MapSerializer(serializers.ModelSerializer):
     class Meta:
         model = Map
-        fields = ["id", "name", "image_url"]
-        extra_kwargs = {"name": {"required": True}, "image_url": {"required": False}}
+        fields = ["id", "name", "image"]
+        extra_kwargs = {"name": {"required": True}, "image": {"required": False}}
 
 
 class ProfileSerializer(serializers.ModelSerializer):

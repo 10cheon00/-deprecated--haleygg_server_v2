@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -11,9 +12,17 @@ class League(models.Model):
         return self.name
 
 
+def validate_image(image):
+    from django.core.exceptions import ValidationError
+
+    if image.size > settings.FILE_UPLOAD_MAX_MEMORY_SIZE:
+        raise ValidationError("The maximum file size that can be uploaded is 1MB.")
+    return image
+
+
 class Map(models.Model):
     name = models.CharField(default="", max_length=30, unique=True)
-    image_url = models.URLField(max_length=200, null=True)
+    image = models.ImageField(upload_to="images/", validators=[validate_image])
 
     def __str__(self):
         return self.name

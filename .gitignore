@@ -3,6 +3,7 @@ __pycache__
 migrations
 static
 staticfiles
+media
 
 # files
 .pyc
