@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.forms import BaseInlineFormSet
 from django.forms import ModelForm
-from django.forms import HiddenInput
 
 from haleygg.models import Match
 from haleygg.models import Map
@@ -13,6 +12,9 @@ from haleygg.models import Profile
 class PlayerInlineFormset(BaseInlineFormSet):
     def clean(self):
         super().clean()
+
+        if self.errors:
+            return self.errors
 
         profiles = []
         win_state_count = 0
@@ -46,7 +48,6 @@ class PlayerInlineFormset(BaseInlineFormSet):
                 instances[0].save()
                 instances[1].save()
             else:
-                self.instance.is_melee_match = False
                 self.instance.save()
         return instances
 
@@ -121,4 +122,5 @@ class ProfileAdmin(admin.ModelAdmin):
 admin.site.register(League)
 admin.site.register(Map)
 admin.site.register(Match, MatchAdmin)
+admin.site.register(Player)
 admin.site.register(Profile, ProfileAdmin)
