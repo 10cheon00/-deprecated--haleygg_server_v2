@@ -1,7 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.db.models.signals import pre_save
-from django.dispatch import receiver
 from django.utils import timezone
 
 from haleygg.managers import MatchStatisticsQueryset
@@ -73,15 +71,6 @@ class Match(models.Model):
 
     def get_related_players(self):
         return self.players.all()
-
-
-@receiver(pre_save, sender=Match)
-def set_is_melee_match(sender, instance, *args, **kwargs):
-    players = instance.get_related_players().count()
-    is_melee_match = True
-    if players > 2:
-        is_melee_match = False
-    instance.is_melee_match = is_melee_match
 
 
 class Player(models.Model):

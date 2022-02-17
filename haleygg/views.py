@@ -1,6 +1,6 @@
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import ModelViewSet
 
 from haleygg.mixins import MatchFilterMixin
 from haleygg.models import League
@@ -15,22 +15,22 @@ from haleygg.serializers import ProfileSerializer
 from haleygg.serializers import WinRatioByRaceSerializer
 
 
-class LeagueViewSet(ReadOnlyModelViewSet):
+class LeagueViewSet(ModelViewSet):
     serializer_class = LeagueSerializer
     queryset = League.objects.all()
 
 
-class ProfileViewSet(ReadOnlyModelViewSet):
+class ProfileViewSet(ModelViewSet):
     serializer_class = ProfileSerializer
     queryset = Profile.objects.all()
 
 
-class MapViewSet(ReadOnlyModelViewSet):
+class MapViewSet(ModelViewSet):
     serializer_class = MapSerializer
     queryset = Map.objects.all()
 
 
-class MatchViewSet(MatchFilterMixin, ReadOnlyModelViewSet):
+class MatchViewSet(MatchFilterMixin, ModelViewSet):
     serializer_class = MatchSerializer
     queryset = (
         Match.objects.select_related("league", "map")
