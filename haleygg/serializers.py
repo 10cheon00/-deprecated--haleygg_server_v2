@@ -55,39 +55,50 @@ class PlayerListSerializer(serializers.ListSerializer):
         PlayerTuple.objects.bulk_create(player_tuples)
         return player_tuples
 
-    # def update(self, instance, validated_data):
-    #     self.player_mapping = {player.id: player for player in instance}
-    #     data_mapping = {data.get("id"): data for data in validated_data}
+    def update(self, instance, validated_data):
+        self.player_tuple_mapping = {
+            player_tuple.id: player_tuple for player_tuple in instance
+        }
+        data_mapping = {data.get("id"): data for data in validated_data}
 
-    #     different_ids = set(self.player_mapping.keys() - data_mapping.keys())
-    #     if different_ids:
-    #         raise serializers.ValidationError(
-    #             {"players_id": f"{different_ids}에 해당하는 값이 없습니다."}
-    #         )
+        different_ids = set(self.player_tuple_mapping.keys() - data_mapping.keys())
+        if different_ids:
+            raise serializers.ValidationError(
+                {"player_tuples_id": f"{different_ids}에 해당하는 값이 없습니다."}
+            )
 
-    #     for player_id, data in data_mapping.items():
-    #         player_instance = self.find_player_instance(player_id)
-    #         player_instance.profile = data.get("profile")
-    #         player_instance.race = data.get("race")
-    #         player_instance.win_state = data.get("win_state")
+        for player_id, data in data_mapping.items():
+            player_instance = self.find_player_instance(player_id)
+            player_instance.winner = data.get("winner")
+            player_instance.winner_race = data.get("winner_race")
+            player_instance.loser = data.get("loser")
+            player_instance.loser_race = data.get("loser_race")
 
-    #     Player.objects.bulk_update(instance, ["profile", "race", "win_state"])
+        PlayerTuple.objects.bulk_update(
+            instance, ["winner", "winner_race", "loser", "loser_race"]
+        )
 
-    #     return instance
+        return instance
 
-    # def find_player_instance(self, player_id):
-    #     return self.player_mapping[player_id]
+    def find_player_instance(self, player_id):
+        return self.player_tuple_mapping[player_id]
 
 
 class PlayerTupleSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlayerTuple
         fields = [
+            "id",
             "winner",
             "winner_race",
             "loser",
             "loser_race",
         ]
+        extra_kwargs = {
+            "id": {"read_only": False},
+            "winner_race": {"required": True},
+            "loser_race": {"required": True},
+        }
         list_serializer_class = PlayerListSerializer
 
 
