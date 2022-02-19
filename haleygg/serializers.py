@@ -80,12 +80,9 @@ class PlayerListSerializer(serializers.ListSerializer):
 
 
 class PlayerTupleSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
-
     class Meta:
         model = PlayerTuple
         fields = [
-            "id",
             "winner",
             "winner_race",
             "loser",
