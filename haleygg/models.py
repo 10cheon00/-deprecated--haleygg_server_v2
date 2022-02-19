@@ -57,7 +57,6 @@ class Match(models.Model):
     miscellaneous = models.CharField(
         default="", max_length=100, blank=True, verbose_name="비고"
     )
-    is_melee_match = models.BooleanField(default=True)
 
     objects = models.Manager()
     statistics = MatchStatisticsQueryset.as_manager()
@@ -69,25 +68,27 @@ class Match(models.Model):
     def __str__(self):
         return f"Date: {self.date}, League: {self.league_id}, Title: {self.title}, Map: {self.map_id}"
 
-    def get_related_players(self):
-        return self.players.all()
+    def get_related_player_tuples(self):
+        return self.player_tuples.all()
 
 
-class Player(models.Model):
+class PlayerTuple(models.Model):
     RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
-    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="players")
-    opponent = models.ForeignKey(
-        "self", blank=True, on_delete=models.SET_NULL, null=True
+    match = models.ForeignKey(
+        Match, on_delete=models.CASCADE, related_name="player_tuples"
     )
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, verbose_name="플레이어")
-    race = models.CharField(
-        choices=RACE_LIST, default="", max_length=10, verbose_name="종족"
+    winner = models.ForeignKey(
+        Profile, on_delete=models.CASCADE, related_name="winner", verbose_name="승리자"
     )
-    win_state = models.BooleanField(default=False, verbose_name="승리")
+    loser = models.ForeignKey(
+        Profile, on_delete=models.CASCADE, related_name="loser", verbose_name="패배자"
+    )
+    winner_race = models.CharField(
+        choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
+    )
+    loser_race = models.CharField(
+        choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
+    )
 
     def __str__(self):
-        win_state_str = "승"
-        if not self.win_state:
-            win_state_str = "패"
-
-        return f"Match: {self.match_id}, Profile: {self.profile_id}, Race: {self.race}, isWin: {win_state_str}"
+        return f"Match: {self.match} Winner: {self.winner} ({self.winner_race}) Loser: {self.loser} ({self.loser_race})"

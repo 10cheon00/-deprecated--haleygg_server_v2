@@ -7,16 +7,20 @@ from haleygg.models import Profile
 
 
 class MatchFilterSet(FilterSet):
-    profile = ModelMultipleChoiceFilter(
-        field_name="players__profile",
-        to_field_name="id",
-        queryset=Profile.objects.all(),
-        conjoined=True,
+    profiles = ModelMultipleChoiceFilter(
+        field_name="player_tuples",
+        method="get_profile",
+        queryset=Match.objects.prefetch_related("player_tuples"),
     )
 
     class Meta:
         model = Match
-        fields = ["league", "map", "profile", "is_melee_match"]
+        fields = ["league", "map", "profiles"]
+
+    def get_profile(self, queryset, name, value, *args, **kwargs):
+        # TODO
+        # not properly works...
+        return queryset.filter()
 
 
 class MatchFilterMixin(object):

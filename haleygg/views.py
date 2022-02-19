@@ -34,7 +34,7 @@ class MatchViewSet(MatchFilterMixin, ModelViewSet):
     serializer_class = MatchSerializer
     queryset = (
         Match.objects.select_related("league", "map")
-        .prefetch_related("players", "players__profile")
+        .prefetch_related("player_tuples")
         .all()
     )
 
@@ -43,7 +43,7 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
     serializer_class = WinRatioByRaceSerializer
     queryset = (
         Match.statistics.select_related("league", "map")
-        .prefetch_related("players", "players__profile")
+        .prefetch_related("player_tuples")
         .all()
     )
 
