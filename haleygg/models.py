@@ -5,13 +5,6 @@ from django.utils import timezone
 from haleygg.managers import MatchStatisticsQueryset
 
 
-class League(models.Model):
-    name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
-
-    def __str__(self):
-        return self.name
-
-
 def validate_image(image):
     from django.core.exceptions import ValidationError
 
@@ -43,6 +36,26 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class League(models.Model):
+    name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
+    k_factor = models.IntegerField(default=32)
+    is_elo_rating_active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        # To avoid circular dependency.
+        from elo.models import Elo
+
+        super().save(*args, **kwargs)
+
+        profiles = Profile.objects.all()
+        Elo.objects.bulk_create(
+            [Elo(profile=profile, league=self) for profile in profiles]
+        )
 
 
 class Match(models.Model):
