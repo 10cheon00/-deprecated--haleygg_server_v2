@@ -5,61 +5,34 @@ from django.forms import ModelForm
 from haleygg.models import Match
 from haleygg.models import Map
 from haleygg.models import League
-from haleygg.models import Player
+from haleygg.models import PlayerTuple
 from haleygg.models import Profile
 
 
-class PlayerInlineFormset(BaseInlineFormSet):
+class PlayerTupleInlineFormset(BaseInlineFormSet):
     def clean(self):
         super().clean()
 
-        if self.errors:
-            return self.errors
-
         profiles = []
-        win_state_count = 0
-
         for form in self.forms:
-            profile = form.cleaned_data["profile"]
-            if profile in profiles:
-                form.add_error("profile", "중복된 플레이어입니다.")
-            profiles.append(profile)
-
-            if form.cleaned_data["win_state"]:
-                win_state_count += 1
-
-        players_count = len(self.forms)
-
-        if players_count != win_state_count * 2:
-            for form in self.forms:
-                form.add_error("win_state", "승리한 플레이어를 정확하게 선택해주세요.")
-
-        if players_count % 2 == 1:
-            self.forms[-1].add_error(None, "플레이어 수가 홀수 입니다.")
-        elif players_count < 2:
-            self.forms[-1].add_error(None, "최소 2명 이상의 플레이어가 있어야 합니다.")
-
-    def save(self, commit=True):
-        instances = super().save(commit=commit)
-        if instances:
-            if len(instances) == 2:
-                instances[0].opponent = instances[1]
-                instances[1].opponent = instances[0]
-                instances[0].save()
-                instances[1].save()
-            else:
-                self.instance.save()
-        return instances
+            winner = form.cleaned_data["winner"]
+            loser = form.cleaned_data["loser"]
+            if winner in profiles:
+                form.add_error("winner", "중복된 플레이어입니다.")
+            profiles.append(winner)
+            if loser in profiles:
+                form.add_error("loser", "중복된 플레이어입니다.")
+            profiles.append(loser)
 
 
-class PlayerInline(admin.TabularInline):
-    model = Player
+class PlayerTupleInline(admin.TabularInline):
+    model = PlayerTuple
     extra = 0
-    min_num = 2
-    max_num = 8
-    formset = PlayerInlineFormset
+    min_num = 1
+    max_num = 4
+    formset = PlayerTupleInlineFormset
     fieldsets = [
-        ("Players", {"fields": ["profile", "race", "win_state"]}),
+        ("PlayerTuples", {"fields": ["winner", "winner_race", "loser", "loser_race"]}),
     ]
 
     def has_add_permission(self, request, obj):
@@ -71,7 +44,7 @@ class PlayerInline(admin.TabularInline):
         return False
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related("profile")
+        return super().get_queryset(request).select_related("winner", "loser")
 
 
 class MatchForm(ModelForm):
@@ -89,7 +62,7 @@ class MatchForm(ModelForm):
 class MatchAdmin(admin.ModelAdmin):
     list_display = ("date", "league", "title", "map")
     list_select_related = ["league", "map"]
-    inlines = [PlayerInline]
+    inlines = [PlayerTupleInline]
     form = MatchForm
     fieldsets = [
         (
@@ -111,7 +84,7 @@ class MatchAdmin(admin.ModelAdmin):
             super()
             .get_queryset(request)
             .select_related("league", "map")
-            .prefetch_related("players", "players__profile")
+            .prefetch_related("player_tuples")
         )
 
 
@@ -122,5 +95,5 @@ class ProfileAdmin(admin.ModelAdmin):
 admin.site.register(League)
 admin.site.register(Map)
 admin.site.register(Match, MatchAdmin)
-admin.site.register(Player)
+admin.site.register(PlayerTuple)
 admin.site.register(Profile, ProfileAdmin)
