@@ -152,6 +152,6 @@ class MatchStatisticsQueryset(models.QuerySet):
         )
 
     def get_top_and_bottom_matches(self):
-        return self.annotate(plaeyr_tuples_count=Count("player_tuples")).filter(
+        return self.annotate(player_tuples_count=Count("player_tuples")).filter(
             player_tuples_count__gt=1
         )
