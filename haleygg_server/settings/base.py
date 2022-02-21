@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     "django_filters",
     "account",
     "haleygg",
-    "elo",
+    "haleygg_elo",
 ]
 
 MIDDLEWARE = [

@@ -46,17 +46,6 @@ class League(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
-        # To avoid circular dependency.
-        from elo.models import Elo
-
-        super().save(*args, **kwargs)
-
-        profiles = Profile.objects.all()
-        Elo.objects.bulk_create(
-            [Elo(profile=profile, league=self) for profile in profiles]
-        )
-
 
 class Match(models.Model):
     league = models.ForeignKey(

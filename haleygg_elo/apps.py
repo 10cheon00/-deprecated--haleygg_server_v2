@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class EloConfig(AppConfig):
+class HaleyggEloConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'elo'
+    name = 'haleygg_elo'

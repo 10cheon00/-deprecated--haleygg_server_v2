@@ -7,6 +7,7 @@ from haleygg.models import Match
 from haleygg.models import Map
 from haleygg.models import PlayerTuple
 from haleygg.models import Profile
+from haleygg_elo.models import create_elo
 
 
 class LeagueSerializer(serializers.ModelSerializer):
@@ -56,8 +57,7 @@ class PlayerListSerializer(serializers.ListSerializer):
 
     def create(self, validated_data, match):
         player_tuples = [PlayerTuple(match=match, **item) for item in validated_data]
-        PlayerTuple.objects.bulk_create(player_tuples)
-        return player_tuples
+        return PlayerTuple.objects.bulk_create(player_tuples)
 
     def update(self, instance, validated_data):
         self.player_tuple_mapping = {
@@ -72,11 +72,11 @@ class PlayerListSerializer(serializers.ListSerializer):
             )
 
         for player_id, data in data_mapping.items():
-            player_instance = self.find_player_instance(player_id)
-            player_instance.winner = data.get("winner")
-            player_instance.winner_race = data.get("winner_race")
-            player_instance.loser = data.get("loser")
-            player_instance.loser_race = data.get("loser_race")
+            player_tuple_instance = self.find_player_tuple_from_instance(player_id)
+            player_tuple_instance.winner = data.get("winner")
+            player_tuple_instance.winner_race = data.get("winner_race")
+            player_tuple_instance.loser = data.get("loser")
+            player_tuple_instance.loser_race = data.get("loser_race")
 
         PlayerTuple.objects.bulk_update(
             instance, ["winner", "winner_race", "loser", "loser_race"]
@@ -84,7 +84,7 @@ class PlayerListSerializer(serializers.ListSerializer):
 
         return instance
 
-    def find_player_instance(self, player_id):
+    def find_player_tuple_from_instance(self, player_id):
         return self.player_tuple_mapping[player_id]
 
 
@@ -99,7 +99,7 @@ class PlayerTupleSerializer(serializers.ModelSerializer):
             "loser_race",
         ]
         extra_kwargs = {
-            "id": {"read_only": False},
+            "id": {"read_only": False, "required": False},
             "winner_race": {"required": True},
             "loser_race": {"required": True},
         }
@@ -140,16 +140,22 @@ class MatchSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             self.create_match()
             self.create_player_tuples()
+            if (
+                self.league.is_elo_rating_active
+                and len(self.player_tuples_instance) == 1
+            ):
+                self.create_elo()
         return self.match
 
     def update(self, instance, validated_data):
-        player_validated_data = validated_data.pop("player_tuples")
-        player_instances = instance.get_related_player_tuples()
+        player_tuples_validated_data = validated_data.pop("player_tuples")
+        player_tuples_instance = instance.get_related_player_tuples()
         player_serializer = PlayerTupleSerializer(many=True)
 
         with transaction.atomic():
             player_serializer.update(
-                instance=player_instances, validated_data=player_validated_data
+                instance=player_tuples_instance,
+                validated_data=player_tuples_validated_data,
             )
             return super().update(instance=instance, validated_data=validated_data)
 
@@ -172,7 +178,12 @@ class MatchSerializer(serializers.ModelSerializer):
 
     def create_player_tuples(self):
         player_serializer = PlayerTupleSerializer(many=True)
-        player_serializer.create(validated_data=self.player_tuples, match=self.match)
+        self.player_tuples_instance = player_serializer.create(
+            validated_data=self.player_tuples, match=self.match
+        )
+
+    def create_elo(self):
+        create_elo(player_tuple=self.player_tuples_instance[0])
 
 
 class WinRatioByRaceSerializer(serializers.Serializer):

@@ -7,6 +7,7 @@ from haleygg.models import Map
 from haleygg.models import League
 from haleygg.models import PlayerTuple
 from haleygg.models import Profile
+from haleygg_elo.models import create_elo
 
 
 class PlayerTupleInlineFormset(BaseInlineFormSet):
@@ -86,6 +87,18 @@ class MatchAdmin(admin.ModelAdmin):
             .select_related("league", "map")
             .prefetch_related("player_tuples")
         )
+
+    def save_related(self, request, form, formsets, change):
+        # Override for create elo object.
+        form.save_m2m()
+        if change:
+            # TODO
+            # Update all elo after this match.
+            pass
+        else:
+            if len(formsets) == 1:
+                instance = formsets[0].save()
+                create_elo(player_tuple=instance[0])
 
 
 class ProfileAdmin(admin.ModelAdmin):
