@@ -7,7 +7,8 @@ from haleygg.models import Match
 from haleygg.models import Map
 from haleygg.models import PlayerTuple
 from haleygg.models import Profile
-from haleygg_elo.models import create_elo
+from haleygg_elo.models import create_elo_rating
+from haleygg_elo.models import update_elo_rating
 
 
 class LeagueSerializer(serializers.ModelSerializer):
@@ -71,12 +72,22 @@ class PlayerListSerializer(serializers.ListSerializer):
                 {"player_tuples_id": f"{different_ids}에 해당하는 값이 없습니다."}
             )
 
+        self.has_changed = False
+
         for player_id, data in data_mapping.items():
             player_tuple_instance = self.find_player_tuple_from_instance(player_id)
-            player_tuple_instance.winner = data.get("winner")
-            player_tuple_instance.winner_race = data.get("winner_race")
-            player_tuple_instance.loser = data.get("loser")
-            player_tuple_instance.loser_race = data.get("loser_race")
+            if (
+                player_tuple_instance.winner != data["winner"]
+                or player_tuple_instance.winner_race != data["winner_race"]
+                or player_tuple_instance.loser != data["loser"]
+                or player_tuple_instance.loser_race != data["loser_race"]
+            ):
+                self.has_changed = True
+
+            player_tuple_instance.winner = data["winner"]
+            player_tuple_instance.winner_race = data["winner_race"]
+            player_tuple_instance.loser = data["loser"]
+            player_tuple_instance.loser_race = data["loser_race"]
 
         PlayerTuple.objects.bulk_update(
             instance, ["winner", "winner_race", "loser", "loser_race"]
@@ -140,24 +151,11 @@ class MatchSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             self.create_match()
             self.create_player_tuples()
-            if (
-                self.league.is_elo_rating_active
-                and len(self.player_tuples_instance) == 1
-            ):
-                self.create_elo()
+
+            self.league = self.match.league
+            if self.is_melee_match() and self.is_league_elo_rating_active():
+                create_elo_rating(player_tuple=self.player_tuples_instance[0])
         return self.match
-
-    def update(self, instance, validated_data):
-        player_tuples_validated_data = validated_data.pop("player_tuples")
-        player_tuples_instance = instance.get_related_player_tuples()
-        player_serializer = PlayerTupleSerializer(many=True)
-
-        with transaction.atomic():
-            player_serializer.update(
-                instance=player_tuples_instance,
-                validated_data=player_tuples_validated_data,
-            )
-            return super().update(instance=instance, validated_data=validated_data)
 
     def get_data_from_validated_data(self, validated_data):
         self.league = validated_data.get("league")
@@ -182,8 +180,35 @@ class MatchSerializer(serializers.ModelSerializer):
             validated_data=self.player_tuples, match=self.match
         )
 
-    def create_elo(self):
-        create_elo(player_tuple=self.player_tuples_instance[0])
+    def update(self, instance, validated_data):
+        player_tuples_validated_data = validated_data.pop("player_tuples")
+        player_tuples_instance = instance.get_related_player_tuples()
+        self.player_serializer = PlayerTupleSerializer(many=True)
+
+        with transaction.atomic():
+            self.player_tuples_instance = self.player_serializer.update(
+                instance=player_tuples_instance,
+                validated_data=player_tuples_validated_data,
+            )
+            instance = super().update(instance=instance, validated_data=validated_data)
+
+            self.league = instance.league
+            if (
+                self.is_melee_match()
+                and self.is_league_elo_rating_active()
+                and self.player_tuples_changed()
+            ):
+                update_elo_rating(player_tuple=self.player_tuples_instance[0])
+            return instance
+
+    def is_melee_match(self):
+        return len(self.player_tuples_instance) == 1
+
+    def is_league_elo_rating_active(self):
+        return self.league.is_elo_rating_active
+
+    def player_tuples_changed(self):
+        return self.player_serializer.has_changed
 
 
 class WinRatioByRaceSerializer(serializers.Serializer):

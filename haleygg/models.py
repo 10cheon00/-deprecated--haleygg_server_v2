@@ -64,14 +64,14 @@ class Match(models.Model):
     statistics = MatchStatisticsQueryset.as_manager()
 
     class Meta:
-        ordering = ["-date", "-league", "-title"]
+        ordering = ["date", "league", "title"]
         unique_together = ("league", "title")
 
     def __str__(self):
         return f"Date: {self.date}, League: {self.league_id}, Title: {self.title}, Map: {self.map_id}"
 
     def get_related_player_tuples(self):
-        return self.player_tuples.all()
+        return self.player_tuples.all().select_related("winner", "loser")
 
 
 class PlayerTuple(models.Model):
@@ -89,7 +89,7 @@ class PlayerTuple(models.Model):
         choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
     )
     loser_race = models.CharField(
-        choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
+        choices=RACE_LIST, default="", max_length=10, verbose_name="패배자 종족"
     )
 
     def __str__(self):
