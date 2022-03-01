@@ -1,12 +1,17 @@
 from decimal import Decimal
 
 from django.db import models
+from django.db.models import Case
 from django.db.models import F
 from django.db.models import Q
-from django.db.models import Case
+from django.db.models import OuterRef
+from django.db.models import Subquery
 from django.db.models import When
+from django.db.models import Window
+from django.db.models.functions import Rank
 
 from haleygg.models import Match
+from haleygg.models import Player
 from haleygg.models import PlayerTuple
 
 
@@ -132,3 +137,56 @@ def calculate_elo(previous_elo_of_winner, previous_elo_of_loser, k):
         previous_elo_of_winner + calculated_elo_of_winner,
         previous_elo_of_loser + calculated_elo_of_loser,
     )
+
+
+def get_elo_history_of_player(league, player):
+    return (
+        Elo.objects.filter(player_tuple__match__league=league)
+        .filter(Q(player_tuple__winner=player) | Q(player_tuple__loser=player))
+        .annotate(
+            elo=Case(
+                When(condition=Q(player_tuple__winner=player), then=F("winner_rating")),
+                When(
+                    condition=Q(player_tuple__loser=player),
+                    then=F("loser_rating"),
+                ),
+                default=Decimal(1000.0),
+            ),
+            date=F("player_tuple__match__date"),
+        )
+        .values("elo", "date")
+    )
+
+
+def get_elo_ranking(league):
+    # 서브쿼리 내에서 계속 찾아내기.
+    player_elo_queryset = (
+        Elo.objects.filter(player_tuple__match__league=league)
+        .filter(
+            Q(player_tuple__winner=OuterRef("id"))
+            | Q(player_tuple__loser=OuterRef("id"))
+        )
+        .annotate(
+            elo=Case(
+                When(
+                    condition=Q(player_tuple__winner=OuterRef("id")),
+                    then=F("winner_rating"),
+                ),
+                When(
+                    condition=Q(player_tuple__loser=OuterRef("id")),
+                    then=F("loser_rating"),
+                ),
+                default=Decimal(1000.0),
+            ),
+        )
+    )
+    ranking_queryset = (
+        Player.objects.annotate(
+            current_elo=Subquery(player_elo_queryset.reverse().values("elo")[:1]),
+        )
+        .filter(current_elo__isnull=False)
+        # .annotate(ranking=Window(expression=Rank(), order_by=F("current_elo").desc()))
+        .values("name", "current_elo")
+        .order_by("-current_elo")
+    )
+    return ranking_queryset

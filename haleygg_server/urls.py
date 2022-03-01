@@ -9,6 +9,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("__debug__/", include("debug_toolbar.urls")),
     path("api/", include("haleygg.urls")),
+    path("api/elo/", include("haleygg_elo.urls")),
     path("api-auth/", include("rest_framework.urls")),
     path("api-auth/account/", include("account.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
