@@ -6,13 +6,14 @@ from haleygg.mixins import MatchFilterMixin
 from haleygg.models import League
 from haleygg.models import Map
 from haleygg.models import Match
-from haleygg.models import Profile
+from haleygg.models import Player
 from haleygg.serializers import MapSerializer
 from haleygg.serializers import MatchSerializer
 from haleygg.serializers import LeagueSerializer
 from haleygg.serializers import PlayerMatchSummarySerializer
-from haleygg.serializers import ProfileSerializer
+from haleygg.serializers import PlayerSerializer
 from haleygg.serializers import WinRatioByRaceSerializer
+from haleygg_elo.models import update_all_elo_related_with_league
 
 
 class LeagueViewSet(ModelViewSet):
@@ -20,9 +21,9 @@ class LeagueViewSet(ModelViewSet):
     queryset = League.objects.all()
 
 
-class ProfileViewSet(ModelViewSet):
-    serializer_class = ProfileSerializer
-    queryset = Profile.objects.all()
+class PlayerViewSet(ModelViewSet):
+    serializer_class = PlayerSerializer
+    queryset = Player.objects.all()
 
 
 class MapViewSet(ModelViewSet):
@@ -38,6 +39,13 @@ class MatchViewSet(MatchFilterMixin, ModelViewSet):
         .all()
     )
 
+    def perform_destroy(self, instance):
+        league = instance.league
+        is_melee_match = instance.player_tuples.count() == 1
+        instance.delete()
+        if is_melee_match and league.is_elo_rating_active:
+            update_all_elo_related_with_league(league)
+
 
 class MatchSummaryView(MatchFilterMixin, GenericAPIView):
     serializer_class = WinRatioByRaceSerializer
@@ -48,7 +56,7 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
     )
 
     def get_serializer_class(self):
-        if self.profile:
+        if self.player:
             return PlayerMatchSummarySerializer
         return self.serializer_class
 
@@ -60,8 +68,8 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
 
     def aggregate_queryset(self):
         queryset = self.filter_queryset(self.get_queryset())
-        self.profile = self.request.query_params.get("profile")
-        if self.profile:
-            return queryset.get_player_statistics(self.profile)
+        self.player = self.request.query_params.get("player")
+        if self.player:
+            return queryset.get_player_statistics(self.player)
         else:
             return queryset.get_win_ratio_by_race()

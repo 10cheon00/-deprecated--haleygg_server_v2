@@ -5,13 +5,6 @@ from django.utils import timezone
 from haleygg.managers import MatchStatisticsQueryset
 
 
-class League(models.Model):
-    name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
-
-    def __str__(self):
-        return self.name
-
-
 def validate_image(image):
     from django.core.exceptions import ValidationError
 
@@ -30,7 +23,7 @@ class Map(models.Model):
         return self.name
 
 
-class Profile(models.Model):
+class Player(models.Model):
     RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
     name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
     joined_date = models.DateField(default=timezone.now, verbose_name="가입한 날짜")
@@ -40,6 +33,15 @@ class Profile(models.Model):
     career = models.TextField(
         default="", max_length=1000, null=True, blank=True, verbose_name="커리어"
     )
+
+    def __str__(self):
+        return self.name
+
+
+class League(models.Model):
+    name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
+    k_factor = models.IntegerField(default=32)
+    is_elo_rating_active = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -62,14 +64,14 @@ class Match(models.Model):
     statistics = MatchStatisticsQueryset.as_manager()
 
     class Meta:
-        ordering = ["-date", "-league", "-title"]
+        ordering = ("date", "league", "title")
         unique_together = ("league", "title")
 
     def __str__(self):
         return f"Date: {self.date}, League: {self.league_id}, Title: {self.title}, Map: {self.map_id}"
 
     def get_related_player_tuples(self):
-        return self.player_tuples.all()
+        return self.player_tuples.all().select_related("winner", "loser")
 
 
 class PlayerTuple(models.Model):
@@ -78,17 +80,20 @@ class PlayerTuple(models.Model):
         Match, on_delete=models.CASCADE, related_name="player_tuples"
     )
     winner = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="winner", verbose_name="승리자"
+        Player, on_delete=models.CASCADE, related_name="winner", verbose_name="승리자"
     )
     loser = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="loser", verbose_name="패배자"
+        Player, on_delete=models.CASCADE, related_name="loser", verbose_name="패배자"
     )
     winner_race = models.CharField(
         choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
     )
     loser_race = models.CharField(
-        choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
+        choices=RACE_LIST, default="", max_length=10, verbose_name="패배자 종족"
     )
 
+    class Meta:
+        ordering = ("match",)
+
     def __str__(self):
-        return f"Match: {self.match} Winner: {self.winner} ({self.winner_race}) Loser: {self.loser} ({self.loser_race})"
+        return f"Match: {self.match_id} Winner: {self.winner} ({self.winner_race}) Loser: {self.loser} ({self.loser_race})"
