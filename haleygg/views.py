@@ -13,6 +13,7 @@ from haleygg.serializers import LeagueSerializer
 from haleygg.serializers import PlayerMatchSummarySerializer
 from haleygg.serializers import PlayerSerializer
 from haleygg.serializers import WinRatioByRaceSerializer
+from haleygg_elo.models import update_all_elo_related_with_league
 
 
 class LeagueViewSet(ModelViewSet):
@@ -37,6 +38,13 @@ class MatchViewSet(MatchFilterMixin, ModelViewSet):
         .prefetch_related("player_tuples")
         .all()
     )
+
+    def perform_destroy(self, instance):
+        league = instance.league
+        is_melee_match = instance.player_tuples.count() == 1
+        instance.delete()
+        if is_melee_match and league.is_elo_rating_active:
+            update_all_elo_related_with_league(league)
 
 
 class MatchSummaryView(MatchFilterMixin, GenericAPIView):

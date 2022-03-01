@@ -99,9 +99,7 @@ def create_elo(player_tuple):
 
 def update_all_elo_related_with_league(league):
     queryset = Elo.objects.filter(player_tuple__match__league=league)
-
     previous_elo_data = dict()
-
     for row in queryset:
         previous_elo_of_winner = previous_elo_data.get(
             row.player_tuple.winner, Decimal(1000.0)
