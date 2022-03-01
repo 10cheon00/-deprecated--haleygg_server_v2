@@ -6,25 +6,25 @@ from haleygg.models import Match
 from haleygg.models import Map
 from haleygg.models import League
 from haleygg.models import PlayerTuple
-from haleygg.models import Profile
-from haleygg_elo.models import create_elo_rating
-from haleygg_elo.models import update_elo_rating
+from haleygg.models import Player
+from haleygg_elo.models import create_elo
+from haleygg_elo.models import update_all_elo_related_with_league
 
 
 class PlayerTupleInlineFormset(BaseInlineFormSet):
     def clean(self):
         super().clean()
 
-        profiles = []
+        players = []
         for form in self.forms:
             winner = form.cleaned_data["winner"]
             loser = form.cleaned_data["loser"]
-            if winner in profiles:
+            if winner in players:
                 form.add_error("winner", "중복된 플레이어입니다.")
-            profiles.append(winner)
-            if loser in profiles:
+            players.append(winner)
+            if loser in players:
                 form.add_error("loser", "중복된 플레이어입니다.")
-            profiles.append(loser)
+            players.append(loser)
 
 
 class PlayerTupleInline(admin.TabularInline):
@@ -95,12 +95,12 @@ class MatchAdmin(admin.ModelAdmin):
         if len(formsets) == 1:
             instance = formsets[0].save()
             if change:
-                update_elo_rating(player_tuple=instance[0])
+                update_all_elo_related_with_league(league=form.cleaned_data["league"])
             else:
-                create_elo_rating(player_tuple=instance[0])
+                create_elo(player_tuple=instance[0])
 
 
-class ProfileAdmin(admin.ModelAdmin):
+class PlayerAdmin(admin.ModelAdmin):
     list_display = ("name", "favorate_race", "joined_date")
 
 
@@ -108,4 +108,4 @@ admin.site.register(League)
 admin.site.register(Map)
 admin.site.register(Match, MatchAdmin)
 admin.site.register(PlayerTuple)
-admin.site.register(Profile, ProfileAdmin)
+admin.site.register(Player, PlayerAdmin)

@@ -6,9 +6,9 @@ from haleygg.models import League
 from haleygg.models import Match
 from haleygg.models import Map
 from haleygg.models import PlayerTuple
-from haleygg.models import Profile
-from haleygg_elo.models import create_elo_rating
-from haleygg_elo.models import update_elo_rating
+from haleygg.models import Player
+from haleygg_elo.models import create_elo
+from haleygg_elo.models import update_all_elo_related_with_league
 
 
 class LeagueSerializer(serializers.ModelSerializer):
@@ -29,9 +29,9 @@ class MapSerializer(serializers.ModelSerializer):
         extra_kwargs = {"name": {"required": True}, "image": {"required": True}}
 
 
-class ProfileSerializer(serializers.ModelSerializer):
+class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Profile
+        model = Player
         fields = ["id", "name", "favorate_race", "joined_date", "career"]
 
 
@@ -39,17 +39,17 @@ class PlayerListSerializer(serializers.ListSerializer):
     def validate(self, player_tuples):
         self.error_msg = []
 
-        profiles = []
+        players = []
         for player_tuple in player_tuples:
             winner = player_tuple.get("winner")
-            if winner in profiles:
+            if winner in players:
                 self.error_msg.append(f"플레이어 {winner}가 중복되었습니다.")
-            profiles.append(winner)
+            players.append(winner)
 
             loser = player_tuple.get("loser")
-            if loser in profiles:
+            if loser in players:
                 self.error_msg.append(f"플레이어 {loser}가 중복되었습니다.")
-            profiles.append(loser)
+            players.append(loser)
 
         if self.error_msg:
             raise serializers.ValidationError(self.error_msg)
@@ -154,7 +154,7 @@ class MatchSerializer(serializers.ModelSerializer):
 
             self.league = self.match.league
             if self.is_melee_match() and self.is_league_elo_rating_active():
-                create_elo_rating(player_tuple=self.player_tuples_instance[0])
+                create_elo(player_tuple=self.player_tuples_instance[0])
         return self.match
 
     def get_data_from_validated_data(self, validated_data):
@@ -198,7 +198,7 @@ class MatchSerializer(serializers.ModelSerializer):
                 and self.is_league_elo_rating_active()
                 and self.player_tuples_changed()
             ):
-                update_elo_rating(player_tuple=self.player_tuples_instance[0])
+                update_all_elo_related_with_league(league=self.league)
             return instance
 
     def is_melee_match(self):

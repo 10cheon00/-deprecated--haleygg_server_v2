@@ -23,7 +23,7 @@ class Map(models.Model):
         return self.name
 
 
-class Profile(models.Model):
+class Player(models.Model):
     RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
     name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
     joined_date = models.DateField(default=timezone.now, verbose_name="가입한 날짜")
@@ -64,7 +64,7 @@ class Match(models.Model):
     statistics = MatchStatisticsQueryset.as_manager()
 
     class Meta:
-        ordering = ["date", "league", "title"]
+        ordering = ("date", "league", "title")
         unique_together = ("league", "title")
 
     def __str__(self):
@@ -80,10 +80,10 @@ class PlayerTuple(models.Model):
         Match, on_delete=models.CASCADE, related_name="player_tuples"
     )
     winner = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="winner", verbose_name="승리자"
+        Player, on_delete=models.CASCADE, related_name="winner", verbose_name="승리자"
     )
     loser = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="loser", verbose_name="패배자"
+        Player, on_delete=models.CASCADE, related_name="loser", verbose_name="패배자"
     )
     winner_race = models.CharField(
         choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
@@ -92,5 +92,8 @@ class PlayerTuple(models.Model):
         choices=RACE_LIST, default="", max_length=10, verbose_name="패배자 종족"
     )
 
+    class Meta:
+        ordering = ("match",)
+
     def __str__(self):
-        return f"Match: {self.match} Winner: {self.winner} ({self.winner_race}) Loser: {self.loser} ({self.loser_race})"
+        return f"Match: {self.match_id} Winner: {self.winner} ({self.winner_race}) Loser: {self.loser} ({self.loser_race})"
