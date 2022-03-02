@@ -3,10 +3,10 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from haleygg.models import League
-from haleygg.models import Match
 from haleygg.models import Map
-from haleygg.models import PlayerTuple
+from haleygg.models import Match
 from haleygg.models import Player
+from haleygg.models import PlayerTuple
 from haleygg_elo.models import create_elo
 from haleygg_elo.models import update_all_elo_related_with_league
 
@@ -35,21 +35,29 @@ class PlayerSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "favorate_race", "joined_date", "career"]
 
 
-class PlayerListSerializer(serializers.ListSerializer):
+class PlayerTupleListSerializer(serializers.ListSerializer):
     def validate(self, player_tuples):
         self.error_msg = []
 
         players = []
         for player_tuple in player_tuples:
-            winner = player_tuple.get("winner")
-            if winner in players:
-                self.error_msg.append(f"플레이어 {winner}가 중복되었습니다.")
-            players.append(winner)
+            winner_name = player_tuple.get("winner").get("name")
 
-            loser = player_tuple.get("loser")
-            if loser in players:
-                self.error_msg.append(f"플레이어 {loser}가 중복되었습니다.")
-            players.append(loser)
+            if not Player.objects.filter(name=winner_name).exists():
+                self.error_msg.append(f"플레이어 {winner_name}은 존재하지 않습니다.")
+            else:
+                if winner_name in players:
+                    self.error_msg.append(f"플레이어 {winner_name}가 중복되었습니다.")
+                players.append(winner_name)
+
+            loser_name = player_tuple.get("loser").get("name")
+
+            if not Player.objects.filter(name=loser_name).exists():
+                self.error_msg.append(f"플레이어 {loser_name}은 존재하지 않습니다.")
+            else:
+                if loser_name in players:
+                    self.error_msg.append(f"플레이어 {loser_name}가 중복되었습니다.")
+                players.append(loser_name)
 
         if self.error_msg:
             raise serializers.ValidationError(self.error_msg)
@@ -57,7 +65,17 @@ class PlayerListSerializer(serializers.ListSerializer):
         return player_tuples
 
     def create(self, validated_data, match):
-        player_tuples = [PlayerTuple(match=match, **item) for item in validated_data]
+        player_tuples = []
+        for item in validated_data:
+            player_tuples.append(
+                PlayerTuple(
+                    match=match,
+                    winner=Player.objects.get(name=item["winner"]["name"]),
+                    loser=Player.objects.get(name=item["loser"]["name"]),
+                    winner_race=item["winner_race"],
+                    loser_race=item["loser_race"],
+                )
+            )
         return PlayerTuple.objects.bulk_create(player_tuples)
 
     def update(self, instance, validated_data):
@@ -77,16 +95,18 @@ class PlayerListSerializer(serializers.ListSerializer):
         for player_id, data in data_mapping.items():
             player_tuple_instance = self.find_player_tuple_from_instance(player_id)
             if (
-                player_tuple_instance.winner != data["winner"]
+                player_tuple_instance.winner.name != data["winner"]["name"]
                 or player_tuple_instance.winner_race != data["winner_race"]
-                or player_tuple_instance.loser != data["loser"]
+                or player_tuple_instance.loser.name != data["loser"]["name"]
                 or player_tuple_instance.loser_race != data["loser_race"]
             ):
                 self.has_changed = True
 
-            player_tuple_instance.winner = data["winner"]
+            player_tuple_instance.winner = Player.objects.get(
+                name=data["winner"]["name"]
+            )
             player_tuple_instance.winner_race = data["winner_race"]
-            player_tuple_instance.loser = data["loser"]
+            player_tuple_instance.loser = Player.objects.get(name=data["loser"]["name"])
             player_tuple_instance.loser_race = data["loser_race"]
 
         PlayerTuple.objects.bulk_update(
@@ -100,6 +120,9 @@ class PlayerListSerializer(serializers.ListSerializer):
 
 
 class PlayerTupleSerializer(serializers.ModelSerializer):
+    winner = serializers.CharField(source="winner.name")
+    loser = serializers.CharField(source="loser.name")
+
     class Meta:
         model = PlayerTuple
         fields = [
@@ -114,7 +137,7 @@ class PlayerTupleSerializer(serializers.ModelSerializer):
             "winner_race": {"required": True},
             "loser_race": {"required": True},
         }
-        list_serializer_class = PlayerListSerializer
+        list_serializer_class = PlayerTupleListSerializer
 
 
 class MatchSerializer(serializers.ModelSerializer):

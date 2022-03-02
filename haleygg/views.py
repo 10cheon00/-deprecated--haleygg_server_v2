@@ -24,6 +24,7 @@ class LeagueViewSet(ModelViewSet):
 class PlayerViewSet(ModelViewSet):
     serializer_class = PlayerSerializer
     queryset = Player.objects.all()
+    lookup_field = "name"
 
 
 class MapViewSet(ModelViewSet):

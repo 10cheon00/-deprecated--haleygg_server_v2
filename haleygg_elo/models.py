@@ -7,8 +7,6 @@ from django.db.models import Q
 from django.db.models import OuterRef
 from django.db.models import Subquery
 from django.db.models import When
-from django.db.models import Window
-from django.db.models.functions import Rank
 
 from haleygg.models import Match
 from haleygg.models import Player
@@ -159,7 +157,6 @@ def get_elo_history_of_player(league, player):
 
 
 def get_elo_ranking(league):
-    # 서브쿼리 내에서 계속 찾아내기.
     player_elo_queryset = (
         Elo.objects.filter(player_tuple__match__league=league)
         .filter(
@@ -185,7 +182,6 @@ def get_elo_ranking(league):
             current_elo=Subquery(player_elo_queryset.reverse().values("elo")[:1]),
         )
         .filter(current_elo__isnull=False)
-        # .annotate(ranking=Window(expression=Rank(), order_by=F("current_elo").desc()))
         .values("name", "current_elo")
         .order_by("-current_elo")
     )
