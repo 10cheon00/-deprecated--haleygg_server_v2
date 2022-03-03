@@ -26,7 +26,6 @@ class MapSerializer(serializers.ModelSerializer):
     class Meta:
         model = Map
         fields = ["id", "name", "image"]
-        extra_kwargs = {"name": {"required": True}, "image": {"required": True}}
 
 
 class PlayerSerializer(serializers.ModelSerializer):
@@ -41,7 +40,7 @@ class PlayerTupleListSerializer(serializers.ListSerializer):
 
         players = []
         for player_tuple in player_tuples:
-            winner_name = player_tuple.get("winner").get("name")
+            winner_name = player_tuple.get("winner").name
 
             if not Player.objects.filter(name=winner_name).exists():
                 self.error_msg.append(f"플레이어 {winner_name}은 존재하지 않습니다.")
@@ -50,7 +49,7 @@ class PlayerTupleListSerializer(serializers.ListSerializer):
                     self.error_msg.append(f"플레이어 {winner_name}가 중복되었습니다.")
                 players.append(winner_name)
 
-            loser_name = player_tuple.get("loser").get("name")
+            loser_name = player_tuple.get("loser").name
 
             if not Player.objects.filter(name=loser_name).exists():
                 self.error_msg.append(f"플레이어 {loser_name}은 존재하지 않습니다.")
@@ -70,8 +69,8 @@ class PlayerTupleListSerializer(serializers.ListSerializer):
             player_tuples.append(
                 PlayerTuple(
                     match=match,
-                    winner=Player.objects.get(name=item["winner"]["name"]),
-                    loser=Player.objects.get(name=item["loser"]["name"]),
+                    winner=item["winner"],
+                    loser=item["loser"],
                     winner_race=item["winner_race"],
                     loser_race=item["loser_race"],
                 )
@@ -95,18 +94,16 @@ class PlayerTupleListSerializer(serializers.ListSerializer):
         for player_id, data in data_mapping.items():
             player_tuple_instance = self.find_player_tuple_from_instance(player_id)
             if (
-                player_tuple_instance.winner.name != data["winner"]["name"]
+                player_tuple_instance.winner.name != data["winner"].name
                 or player_tuple_instance.winner_race != data["winner_race"]
-                or player_tuple_instance.loser.name != data["loser"]["name"]
+                or player_tuple_instance.loser.name != data["loser"].name
                 or player_tuple_instance.loser_race != data["loser_race"]
             ):
                 self.has_changed = True
 
-            player_tuple_instance.winner = Player.objects.get(
-                name=data["winner"]["name"]
-            )
+            player_tuple_instance.winner = data["winner"]
             player_tuple_instance.winner_race = data["winner_race"]
-            player_tuple_instance.loser = Player.objects.get(name=data["loser"]["name"])
+            player_tuple_instance.loser = data["loser"]
             player_tuple_instance.loser_race = data["loser_race"]
 
         PlayerTuple.objects.bulk_update(
@@ -120,8 +117,12 @@ class PlayerTupleListSerializer(serializers.ListSerializer):
 
 
 class PlayerTupleSerializer(serializers.ModelSerializer):
-    winner = serializers.CharField(source="winner.name")
-    loser = serializers.CharField(source="loser.name")
+    winner = serializers.SlugRelatedField(
+        queryset=Player.objects.all(), slug_field="name"
+    )
+    loser = serializers.SlugRelatedField(
+        queryset=Player.objects.all(), slug_field="name"
+    )
 
     class Meta:
         model = PlayerTuple
@@ -141,10 +142,10 @@ class PlayerTupleSerializer(serializers.ModelSerializer):
 
 
 class MatchSerializer(serializers.ModelSerializer):
-    league = serializers.PrimaryKeyRelatedField(
-        queryset=League.objects.all(), required=True
+    league = serializers.SlugRelatedField(
+        queryset=League.objects.all(), slug_field="name"
     )
-    map = serializers.PrimaryKeyRelatedField(queryset=Map.objects.all(), required=True)
+    map = serializers.SlugRelatedField(queryset=Map.objects.all(), slug_field="name")
     player_tuples = PlayerTupleSerializer(many=True, required=True, allow_empty=False)
 
     class Meta:
