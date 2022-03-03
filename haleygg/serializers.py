@@ -255,3 +255,7 @@ class PlayerMatchSummarySerializer(WinRatioByRaceSerializer):
     losing_melee_matches_count = serializers.IntegerField()
     winning_top_and_bottom_matches_count = serializers.IntegerField()
     losing_top_and_bottom_matches_count = serializers.IntegerField()
+
+
+class MapStatisticsSerializer(WinRatioByRaceSerializer):
+    total_matches_count = serializers.IntegerField()
