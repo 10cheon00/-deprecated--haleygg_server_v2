@@ -1,3 +1,7 @@
-from django.shortcuts import render
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-# Create your views here.
+from haleygg_auth.serializers import UserNameTokenObtainPairSerializer
+
+
+class UserNameTokenObtainPairView(TokenObtainPairView):
+    serializer_class = UserNameTokenObtainPairSerializer
