@@ -15,8 +15,12 @@ from haleygg.models import PlayerTuple
 
 class Elo(models.Model):
     player_tuple = models.OneToOneField(PlayerTuple, on_delete=models.CASCADE)
-    winner_rating = models.DecimalField(default=1000.0, max_digits=6, decimal_places=1)
-    loser_rating = models.DecimalField(default=1000.0, max_digits=6, decimal_places=1)
+    winner_rating = models.DecimalField(
+        default=1000.0, max_digits=6, decimal_places=1, verbose_name="승리자 Elo"
+    )
+    loser_rating = models.DecimalField(
+        default=1000.0, max_digits=6, decimal_places=1, verbose_name="패배자 Elo"
+    )
 
     objects = models.Manager()
 

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import json
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -59,10 +60,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "rest_framework",
+    "rest_framework_simplejwt",
     "django_filters",
-    "account",
     "haleygg",
     "haleygg_elo",
+    "haleygg_auth",
 ]
 
 MIDDLEWARE = [
@@ -163,11 +165,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.AllowAny",
-        # "rest_framework.permissions.IsAuthenticatedOrReadOnly", # 임시 비활성화
+        # "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
 }
 
@@ -177,3 +179,13 @@ REST_FRAMEWORK = {
 CORS_ORIGIN_WHITELIST = ["http://127.0.0.1:8000"]
 
 CORS_ALLOW_CREDENTIALS = True
+
+
+# SIMPLE_JWT
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(seconds=10),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+}
