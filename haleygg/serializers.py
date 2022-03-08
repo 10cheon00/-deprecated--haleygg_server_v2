@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -29,9 +30,15 @@ class MapSerializer(serializers.ModelSerializer):
 
 
 class PlayerSerializer(serializers.ModelSerializer):
+    joined_date = serializers.DateField(default=timezone.now().date)
+
     class Meta:
         model = Player
         fields = ["id", "name", "favorate_race", "joined_date", "career"]
+        extra_kwargs = {
+            "joined_date": {"required": False},
+            "career": {"required": False},
+        }
 
 
 class PlayerTupleListSerializer(serializers.ListSerializer):
