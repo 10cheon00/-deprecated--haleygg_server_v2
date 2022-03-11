@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -23,6 +23,15 @@ class LeagueViewSet(ModelViewSet):
     serializer_class = LeagueSerializer
     queryset = League.objects.all()
 
+    def list(self, request, *args, **kwargs):
+        is_elo_rating_active = request.query_params.get("is_elo_rating_active")
+        if is_elo_rating_active:
+            queryset = League.objects.filter(is_elo_rating_active=is_elo_rating_active)
+        else:
+            queryset = League.objects.all()
+        serializer = self.get_serializer(instance=queryset, many=True)
+        return Response(serializer.data)
+
 
 class PlayerViewSet(ModelViewSet):
     serializer_class = PlayerSerializer
@@ -35,6 +44,10 @@ class MapViewSet(ModelViewSet):
     queryset = Map.objects.all()
 
 
+class MatchPagination(PageNumberPagination):
+    page_size = 2
+
+
 class MatchViewSet(MatchFilterMixin, ModelViewSet):
     serializer_class = MatchSerializer
     queryset = (
@@ -42,7 +55,7 @@ class MatchViewSet(MatchFilterMixin, ModelViewSet):
         .prefetch_related("player_tuples")
         .all()
     )
-    pagination_class = LimitOffsetPagination
+    pagination_class = MatchPagination
 
     def perform_destroy(self, instance):
         league = instance.league
