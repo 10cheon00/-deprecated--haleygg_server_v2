@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -41,6 +42,7 @@ class MatchViewSet(MatchFilterMixin, ModelViewSet):
         .prefetch_related("player_tuples")
         .all()
     )
+    pagination_class = LimitOffsetPagination
 
     def perform_destroy(self, instance):
         league = instance.league
