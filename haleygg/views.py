@@ -36,7 +36,7 @@ class LeagueViewSet(ModelViewSet):
 class PlayerViewSet(ModelViewSet):
     serializer_class = PlayerSerializer
     queryset = Player.objects.all()
-    lookup_field = "name"
+    lookup_field = "name__iexact"
 
 
 class MapViewSet(ModelViewSet):
