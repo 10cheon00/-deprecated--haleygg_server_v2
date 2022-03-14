@@ -80,10 +80,10 @@ class PlayerTuple(models.Model):
         Match, on_delete=models.CASCADE, related_name="player_tuples"
     )
     winner = models.ForeignKey(
-        Player, on_delete=models.CASCADE, related_name="winner", verbose_name="승리자"
+        Player, on_delete=models.CASCADE, related_name="winners", verbose_name="승리자"
     )
     loser = models.ForeignKey(
-        Player, on_delete=models.CASCADE, related_name="loser", verbose_name="패배자"
+        Player, on_delete=models.CASCADE, related_name="losers", verbose_name="패배자"
     )
     winner_race = models.CharField(
         choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
