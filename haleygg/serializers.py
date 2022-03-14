@@ -1,106 +1,159 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
-from rest_framework import exceptions
+from rest_framework.validators import UniqueTogetherValidator
 
 from haleygg.models import League
-from haleygg.models import Match
 from haleygg.models import Map
+from haleygg.models import Match
 from haleygg.models import Player
-from haleygg.models import Profile
+from haleygg.models import PlayerTuple
+from haleygg_elo.models import create_elo
+from haleygg_elo.models import update_all_elo_related_with_league
 
 
 class LeagueSerializer(serializers.ModelSerializer):
     class Meta:
         model = League
-        fields = ["id", "name"]
-        extra_kwargs = {"name": {"required": True}}
+        fields = ["id", "name", "k_factor", "is_elo_rating_active"]
+        extra_kwargs = {
+            "name": {"required": True},
+            "k_factor": {"required": False},
+            "is_elo_rating_active": {"required": False},
+        }
 
 
 class MapSerializer(serializers.ModelSerializer):
     class Meta:
         model = Map
-        fields = ["id", "name", "image_url"]
-        extra_kwargs = {"name": {"required": True}, "image_url": {"required": False}}
-
-
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Profile
-        fields = ["id", "name", "favorate_race", "joined_date", "career"]
-        extra_kwargs = {
-            "name": {"required": True},
-            "favorate_race": {"required": True},
-            "joined_date": {"required": True},
-        }
-
-
-class PlayerListSerializer(serializers.ListSerializer):
-    def create(self, validated_data, match):
-        opponent = None
-        for player in validated_data:
-            new_player = Player.objects.create(
-                match=match,
-                profile=player.get("profile"),
-                win_state=player.get("win_state"),
-                race=player.get("race"),
-            )
-            if opponent:
-                if opponent.profile is new_player.profile:
-                    raise exceptions.ValidationError(detail="잘못된 플레이어를 입력했습니다.")
-                new_player.opponent = opponent
-                opponent.opponent = new_player
-                new_player.save()
-                opponent.save()
-                opponent = None
-            else:
-                opponent = new_player
-
-    def update(self, instance, validated_data):
-        player_mapping = {player.id: player for player in instance}
-        data_mapping = {data.get("id"): data for data in validated_data}
-
-        player_objects = []
-        try:
-            # TODO
-            # 최적화쿼리 필요
-            # 게임 상대 참조 예외처리
-            for player_id, data in data_mapping.items():
-                player_instance = player_mapping.get(player_id)
-                player_instance.profile = data["profile"]
-                player_instance.race = data.get("race")
-                player_instance.win_state = data.get("win_state")
-
-                player_instance.save()
-                player_objects.append(player_instance)
-        except AttributeError:
-            raise exceptions.ValidationError(detail="잘못된 플레이어를 입력했습니다.")
-        return player_objects
+        fields = ["id", "name", "image"]
 
 
 class PlayerSerializer(serializers.ModelSerializer):
-    profile = serializers.PrimaryKeyRelatedField(
-        queryset=Profile.objects.all(), required=True
-    )
+    joined_date = serializers.DateField(default=timezone.now().date)
 
     class Meta:
         model = Player
-        fields = ["id", "profile", "race", "win_state"]
+        fields = ["id", "name", "favorate_race", "joined_date", "career"]
         extra_kwargs = {
-            "id": {"read_only": False},
-            "race": {"required": True},
-            "win_state": {"required": True},
+            "joined_date": {"required": False},
+            "career": {"required": False},
         }
-        list_serializer_class = PlayerListSerializer
+
+
+class PlayerTupleListSerializer(serializers.ListSerializer):
+    def validate(self, player_tuples):
+        self.error_msg = []
+
+        players = []
+        for player_tuple in player_tuples:
+            winner_name = player_tuple.get("winner").name
+
+            if not Player.objects.filter(name=winner_name).exists():
+                self.error_msg.append(f"플레이어 {winner_name}은 존재하지 않습니다.")
+            else:
+                if winner_name in players:
+                    self.error_msg.append(f"플레이어 {winner_name}가 중복되었습니다.")
+                players.append(winner_name)
+
+            loser_name = player_tuple.get("loser").name
+
+            if not Player.objects.filter(name=loser_name).exists():
+                self.error_msg.append(f"플레이어 {loser_name}은 존재하지 않습니다.")
+            else:
+                if loser_name in players:
+                    self.error_msg.append(f"플레이어 {loser_name}가 중복되었습니다.")
+                players.append(loser_name)
+
+        if self.error_msg:
+            raise serializers.ValidationError(self.error_msg)
+
+        return player_tuples
+
+    def create(self, validated_data, match):
+        player_tuples = []
+        for item in validated_data:
+            player_tuples.append(
+                PlayerTuple(
+                    match=match,
+                    winner=item["winner"],
+                    loser=item["loser"],
+                    winner_race=item["winner_race"],
+                    loser_race=item["loser_race"],
+                )
+            )
+        return PlayerTuple.objects.bulk_create(player_tuples)
+
+    def update(self, instance, validated_data):
+        self.player_tuple_mapping = {
+            player_tuple.id: player_tuple for player_tuple in instance
+        }
+        data_mapping = {data.get("id"): data for data in validated_data}
+
+        different_ids = set(self.player_tuple_mapping.keys() - data_mapping.keys())
+        if different_ids:
+            raise serializers.ValidationError(
+                {"player_tuples_id": f"{different_ids}에 해당하는 값이 없습니다."}
+            )
+
+        self.has_changed = False
+
+        for player_id, data in data_mapping.items():
+            player_tuple_instance = self.find_player_tuple_from_instance(player_id)
+            if (
+                player_tuple_instance.winner.name != data["winner"].name
+                or player_tuple_instance.winner_race != data["winner_race"]
+                or player_tuple_instance.loser.name != data["loser"].name
+                or player_tuple_instance.loser_race != data["loser_race"]
+            ):
+                self.has_changed = True
+
+            player_tuple_instance.winner = data["winner"]
+            player_tuple_instance.winner_race = data["winner_race"]
+            player_tuple_instance.loser = data["loser"]
+            player_tuple_instance.loser_race = data["loser_race"]
+
+        PlayerTuple.objects.bulk_update(
+            instance, ["winner", "winner_race", "loser", "loser_race"]
+        )
+
+        return instance
+
+    def find_player_tuple_from_instance(self, player_id):
+        return self.player_tuple_mapping[player_id]
+
+
+class PlayerTupleSerializer(serializers.ModelSerializer):
+    winner = serializers.SlugRelatedField(
+        queryset=Player.objects.all(), slug_field="name"
+    )
+    loser = serializers.SlugRelatedField(
+        queryset=Player.objects.all(), slug_field="name"
+    )
+
+    class Meta:
+        model = PlayerTuple
+        fields = [
+            "id",
+            "winner",
+            "winner_race",
+            "loser",
+            "loser_race",
+        ]
+        extra_kwargs = {
+            "id": {"read_only": False, "required": False},
+            "winner_race": {"required": True},
+            "loser_race": {"required": True},
+        }
+        list_serializer_class = PlayerTupleListSerializer
 
 
 class MatchSerializer(serializers.ModelSerializer):
-    league = serializers.PrimaryKeyRelatedField(
-        queryset=League.objects.all(), required=True
+    league = serializers.SlugRelatedField(
+        queryset=League.objects.all(), slug_field="name"
     )
-    map = serializers.PrimaryKeyRelatedField(queryset=Map.objects.all(), required=True)
-    players = PlayerSerializer(
-        many=True, required=True, allow_empty=False, min_length=2
-    )
+    map = serializers.SlugRelatedField(queryset=Map.objects.all(), slug_field="name")
+    player_tuples = PlayerTupleSerializer(many=True, required=True, allow_empty=False)
 
     class Meta:
         model = Match
@@ -111,34 +164,29 @@ class MatchSerializer(serializers.ModelSerializer):
             "title",
             "map",
             "miscellaneous",
-            "is_melee_match",
-            "players",
+            "player_tuples",
         ]
-        extra_kwargs = {"date": {"required": True}, "title": {"required": True}}
+        extra_kwargs = {
+            "date": {"required": True},
+            "title": {"required": True},
+        }
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Match.objects.all(), fields=["league", "title"]
+            ),
+        ]
 
     def create(self, validated_data):
         self.get_data_from_validated_data(validated_data=validated_data)
-        self.check_match_already_exists()
 
         with transaction.atomic():
             self.create_match()
-            self.create_players()
+            self.create_player_tuples()
+
+            self.league = self.match.league
+            if self.is_melee_match() and self.is_league_elo_rating_active():
+                create_elo(player_tuple=self.player_tuples_instance[0])
         return self.match
-
-    def update(self, instance, validated_data):
-        player_validated_data = validated_data.pop("players")
-        player_instances = instance.players.all()
-        player_serializer = PlayerSerializer(many=True)
-
-        with transaction.atomic():
-            player_serializer.update(
-                instance=player_instances, validated_data=player_validated_data
-            )
-            self.title = validated_data.get("title")
-            self.league = validated_data.get("league")
-            if instance.league != self.league or instance.title != self.title:
-                self.check_match_already_exists()
-            return super().update(instance=instance, validated_data=validated_data)
 
     def get_data_from_validated_data(self, validated_data):
         self.league = validated_data.get("league")
@@ -146,14 +194,7 @@ class MatchSerializer(serializers.ModelSerializer):
         self.date = validated_data.get("date")
         self.title = validated_data.get("title")
         self.miscellaneous = validated_data.get("miscellaneous")
-        self.is_melee_match = True if len(validated_data.get("players")) > 2 else False
-        self.players = validated_data.pop("players")
-
-    def check_match_already_exists(self):
-        if Match.objects.filter(
-            league=self.league.id, title__iexact=self.title
-        ).exists():
-            raise exceptions.ParseError(detail="이미 있는 전적입니다.")
+        self.player_tuples = validated_data.pop("player_tuples")
 
     def create_match(self):
         self.match = Match.objects.create(
@@ -162,12 +203,43 @@ class MatchSerializer(serializers.ModelSerializer):
             title=self.title,
             map=self.map,
             miscellaneous=self.miscellaneous,
-            is_melee_match=self.is_melee_match,
         )
 
-    def create_players(self):
-        player_serializer = PlayerSerializer(many=True)
-        player_serializer.create(validated_data=self.players, match=self.match)
+    def create_player_tuples(self):
+        player_serializer = PlayerTupleSerializer(many=True)
+        self.player_tuples_instance = player_serializer.create(
+            validated_data=self.player_tuples, match=self.match
+        )
+
+    def update(self, instance, validated_data):
+        player_tuples_validated_data = validated_data.pop("player_tuples")
+        player_tuples_instance = instance.get_related_player_tuples()
+        self.player_serializer = PlayerTupleSerializer(many=True)
+
+        with transaction.atomic():
+            self.player_tuples_instance = self.player_serializer.update(
+                instance=player_tuples_instance,
+                validated_data=player_tuples_validated_data,
+            )
+            instance = super().update(instance=instance, validated_data=validated_data)
+
+            self.league = instance.league
+            if (
+                self.is_melee_match()
+                and self.is_league_elo_rating_active()
+                and self.player_tuples_changed()
+            ):
+                update_all_elo_related_with_league(league=self.league)
+            return instance
+
+    def is_melee_match(self):
+        return len(self.player_tuples_instance) == 1
+
+    def is_league_elo_rating_active(self):
+        return self.league.is_elo_rating_active
+
+    def player_tuples_changed(self):
+        return self.player_serializer.has_changed
 
 
 class WinRatioByRaceSerializer(serializers.Serializer):
@@ -177,6 +249,9 @@ class WinRatioByRaceSerializer(serializers.Serializer):
     terran_wins_to_zerg_count = serializers.IntegerField()
     zerg_wins_to_protoss_count = serializers.IntegerField()
     zerg_wins_to_terran_count = serializers.IntegerField()
+
+
+class PlayerMatchSummarySerializer(WinRatioByRaceSerializer):
     protoss_loses_to_terran_count = serializers.IntegerField()
     protoss_loses_to_zerg_count = serializers.IntegerField()
     terran_loses_to_protoss_count = serializers.IntegerField()
@@ -184,9 +259,11 @@ class WinRatioByRaceSerializer(serializers.Serializer):
     zerg_loses_to_protoss_count = serializers.IntegerField()
     zerg_loses_to_terran_count = serializers.IntegerField()
 
+    winning_melee_matches_count = serializers.IntegerField()
+    losing_melee_matches_count = serializers.IntegerField()
+    winning_top_and_bottom_matches_count = serializers.IntegerField()
+    losing_top_and_bottom_matches_count = serializers.IntegerField()
 
-class PlayerMatchSummarySerializer(WinRatioByRaceSerializer):
-    melee_winning_count = serializers.IntegerField()
-    melee_losing_count = serializers.IntegerField()
-    top_and_bottom_winning_count = serializers.IntegerField()
-    top_and_bottom_losing_count = serializers.IntegerField()
+
+class MapStatisticsSerializer(WinRatioByRaceSerializer):
+    total_matches_count = serializers.IntegerField()

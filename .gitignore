@@ -1,6 +1,9 @@
 # folders
 __pycache__
 migrations
+static
+staticfiles
+media
 
 # files
 .pyc

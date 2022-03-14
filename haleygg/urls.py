@@ -6,14 +6,14 @@ from haleygg.views import MatchSummaryView
 from haleygg.views import MatchViewSet
 from haleygg.views import MapViewSet
 from haleygg.views import LeagueViewSet
-from haleygg.views import ProfileViewSet
+from haleygg.views import PlayerViewSet
 
 
 router = DefaultRouter()
 router.register(r"maps", MapViewSet)
 router.register(r"matches", MatchViewSet)
 router.register(r"leagues", LeagueViewSet)
-router.register(r"profiles", ProfileViewSet)
+router.register(r"players", PlayerViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
