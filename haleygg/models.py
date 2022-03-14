@@ -65,7 +65,7 @@ class Match(models.Model):
 
     class Meta:
         ordering = ("date", "league", "title")
-        unique_together = ("league", "title")
+        unique_together = ("date", "league", "title")
 
     def __str__(self):
         return f"Date: {self.date}, League: {self.league_id}, Title: {self.title}, Map: {self.map_id}"
