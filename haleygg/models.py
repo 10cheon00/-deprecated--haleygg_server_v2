@@ -16,7 +16,7 @@ def validate_image(image):
 class Map(models.Model):
     name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
     image = models.ImageField(
-        upload_to="images/", validators=[validate_image], verbose_name="맵 이미지"
+        upload_to="images/%Y/%m/%d", validators=[validate_image], verbose_name="맵 이미지"
     )
 
     def __str__(self):
