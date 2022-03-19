@@ -1,5 +1,8 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
+from django.utils.encoding import smart_text
+
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -123,13 +126,21 @@ class PlayerTupleListSerializer(serializers.ListSerializer):
         return self.player_tuple_mapping[player_id]
 
 
+class CreatableSlugRelatedField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        try:
+            return self.get_queryset().get_or_create(**{self.slug_field: data})[0]
+        except ObjectDoesNotExist:
+            self.fail(
+                "does_not_exist", slug_name=self.slug_field, value=smart_text(data)
+            )
+        except (TypeError, ValueError):
+            self.fail("invalid")
+
+
 class PlayerTupleSerializer(serializers.ModelSerializer):
-    winner = serializers.SlugRelatedField(
-        queryset=Player.objects.all(), slug_field="name"
-    )
-    loser = serializers.SlugRelatedField(
-        queryset=Player.objects.all(), slug_field="name"
-    )
+    winner = CreatableSlugRelatedField(queryset=Player.objects.all(), slug_field="name")
+    loser = CreatableSlugRelatedField(queryset=Player.objects.all(), slug_field="name")
 
     class Meta:
         model = PlayerTuple
@@ -149,10 +160,8 @@ class PlayerTupleSerializer(serializers.ModelSerializer):
 
 
 class MatchSerializer(serializers.ModelSerializer):
-    league = serializers.SlugRelatedField(
-        queryset=League.objects.all(), slug_field="name"
-    )
-    map = serializers.SlugRelatedField(queryset=Map.objects.all(), slug_field="name")
+    league = CreatableSlugRelatedField(queryset=League.objects.all(), slug_field="name")
+    map = CreatableSlugRelatedField(queryset=Map.objects.all(), slug_field="name")
     player_tuples = PlayerTupleSerializer(many=True, required=True, allow_empty=False)
 
     class Meta:

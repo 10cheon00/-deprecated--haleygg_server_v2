@@ -186,7 +186,7 @@ def get_elo_ranking(league):
             current_elo=Subquery(player_elo_queryset.reverse().values("elo")[:1]),
         )
         .filter(current_elo__isnull=False)
-        .values("name", "current_elo")
+        .values("name", "current_elo", "favorate_race")
         .order_by("-current_elo")
     )
     return ranking_queryset
