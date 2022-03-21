@@ -81,8 +81,8 @@ class PlayerTupleListSerializer(serializers.ListSerializer):
                     match=match,
                     winner=item["winner"],
                     loser=item["loser"],
-                    winner_race=item["winner_race"],
-                    loser_race=item["loser_race"],
+                    winner_race=item.get("winner_race"),
+                    loser_race=item.get("loser_race"),
                 )
             )
         return PlayerTuple.objects.bulk_create(player_tuples)
@@ -153,8 +153,8 @@ class PlayerTupleSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             "id": {"read_only": False, "required": False},
-            "winner_race": {"required": True},
-            "loser_race": {"required": True},
+            "winner_race": {"required": False},
+            "loser_race": {"required": False},
         }
         list_serializer_class = PlayerTupleListSerializer
 
@@ -178,6 +178,7 @@ class MatchSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "date": {"required": True},
             "title": {"required": True},
+            "miscellaneous": {"required": False},
         }
         validators = [
             UniqueTogetherValidator(

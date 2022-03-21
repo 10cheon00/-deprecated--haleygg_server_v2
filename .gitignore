@@ -8,3 +8,4 @@ media
 # files
 .pyc
 secrets.json
+api-key.json

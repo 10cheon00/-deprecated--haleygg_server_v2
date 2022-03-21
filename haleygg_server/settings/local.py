@@ -1,8 +1,17 @@
 from haleygg_server.settings.base import *
 
-# CORS
+# REST_FRAMEWORK
 
-# CORS_ORIGIN_WHITELIST = ["http://127.0.0.1:8000"]
+REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
+}
+
+
+# CORS
 
 CORS_ORIGIN_ALLOW_ALL = True
 

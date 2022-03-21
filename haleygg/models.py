@@ -60,7 +60,7 @@ class Match(models.Model):
         Map, on_delete=models.CASCADE, related_name="matches", verbose_name="맵"
     )
     miscellaneous = models.CharField(
-        default="", max_length=100, blank=True, verbose_name="비고"
+        default="", max_length=100, null=True, verbose_name="비고"
     )
 
     objects = models.Manager()
@@ -89,10 +89,18 @@ class PlayerTuple(models.Model):
         Player, on_delete=models.CASCADE, related_name="losers", verbose_name="패배자"
     )
     winner_race = models.CharField(
-        choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
+        choices=RACE_LIST,
+        default="",
+        max_length=10,
+        verbose_name="승리자 종족",
+        null=True,
     )
     loser_race = models.CharField(
-        choices=RACE_LIST, default="", max_length=10, verbose_name="패배자 종족"
+        choices=RACE_LIST,
+        default="",
+        max_length=10,
+        verbose_name="패배자 종족",
+        null=True,
     )
 
     class Meta:
