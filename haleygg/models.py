@@ -89,10 +89,20 @@ class PlayerTuple(models.Model):
         Player, on_delete=models.CASCADE, related_name="losers", verbose_name="패배자"
     )
     winner_race = models.CharField(
-        choices=RACE_LIST, default="", max_length=10, verbose_name="승리자 종족"
+        choices=RACE_LIST,
+        default="",
+        max_length=10,
+        verbose_name="승리자 종족",
+        blank=True,
+        null=True,
     )
     loser_race = models.CharField(
-        choices=RACE_LIST, default="", max_length=10, verbose_name="패배자 종족"
+        choices=RACE_LIST,
+        default="",
+        max_length=10,
+        verbose_name="패배자 종족",
+        blank=True,
+        null=True,
     )
 
     class Meta:
