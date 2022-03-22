@@ -129,7 +129,10 @@ class PlayerTupleListSerializer(serializers.ListSerializer):
 class CreatableSlugRelatedField(serializers.SlugRelatedField):
     def to_internal_value(self, data):
         try:
-            return self.get_queryset().get_or_create(**{self.slug_field: data})[0]
+            return self.get_queryset().get_or_create(
+                **{f"{self.slug_field}__iexact": str(data)},
+                defaults={self.slug_field: str(data)},
+            )[0]
         except ObjectDoesNotExist:
             self.fail(
                 "does_not_exist", slug_name=self.slug_field, value=smart_text(data)
@@ -160,7 +163,9 @@ class PlayerTupleSerializer(serializers.ModelSerializer):
 
 
 class MatchSerializer(serializers.ModelSerializer):
-    league = CreatableSlugRelatedField(queryset=League.objects.all(), slug_field="name")
+    league = serializers.SlugRelatedField(
+        queryset=League.objects.all(), slug_field="name"
+    )
     map = CreatableSlugRelatedField(queryset=Map.objects.all(), slug_field="name")
     player_tuples = PlayerTupleSerializer(many=True, required=True, allow_empty=False)
 
