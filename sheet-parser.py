@@ -63,12 +63,12 @@ def parse_row(row, league_name):
     return parsed_data
 
 
-def parse(league_name):
+def parse(sheet_name, league_name):
     gc = gspread.service_account(filename="api-key.json")
     docs = gc.open_by_url(
         "https://docs.google.com/spreadsheets/d/1uWSQN27VYk89oOOjMePFftAhnMZjYf5e-3BbyUrFXwA/edit?usp=sharing"
     )
-    sheet = docs.worksheet("팀플전적Data")
+    sheet = docs.worksheet(sheet_name)
     data = sheet.get_all_records()
 
     parsed_data = []
