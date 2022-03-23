@@ -128,38 +128,38 @@ class MatchStatisticsQueryset(models.QuerySet):
                 ),
                 protoss_loses_to_terran_count=Count(
                     "id",
-                    filter=Q(player_tuples__winner_race="P")
-                    & Q(player_tuples__loser_race="T")
+                    filter=Q(player_tuples__loser_race="P")
+                    & Q(player_tuples__winner_race="T")
                     & Q(player_tuples__loser=player),
                 ),
                 protoss_loses_to_zerg_count=Count(
                     "id",
-                    filter=Q(player_tuples__winner_race="P")
-                    & Q(player_tuples__loser_race="Z")
+                    filter=Q(player_tuples__loser_race="P")
+                    & Q(player_tuples__winner_race="Z")
                     & Q(player_tuples__loser=player),
                 ),
                 terran_loses_to_protoss_count=Count(
                     "id",
-                    filter=Q(player_tuples__winner_race="T")
-                    & Q(player_tuples__loser_race="P")
+                    filter=Q(player_tuples__loser_race="T")
+                    & Q(player_tuples__winner_race="P")
                     & Q(player_tuples__loser=player),
                 ),
                 terran_loses_to_zerg_count=Count(
                     "id",
-                    filter=Q(player_tuples__winner_race="T")
-                    & Q(player_tuples__loser_race="Z")
-                    & Q(player_tuples__loser=player),
-                ),
-                zerg_loses_to_terran_count=Count(
-                    "id",
-                    filter=Q(player_tuples__winner_race="Z")
-                    & Q(player_tuples__loser_race="T")
+                    filter=Q(player_tuples__loser_race="T")
+                    & Q(player_tuples__winner_race="Z")
                     & Q(player_tuples__loser=player),
                 ),
                 zerg_loses_to_protoss_count=Count(
                     "id",
-                    filter=Q(player_tuples__winner_race="Z")
-                    & Q(player_tuples__loser_race="P")
+                    filter=Q(player_tuples__loser_race="Z")
+                    & Q(player_tuples__winner_race="P")
+                    & Q(player_tuples__loser=player),
+                ),
+                zerg_loses_to_terran_count=Count(
+                    "id",
+                    filter=Q(player_tuples__loser_race="Z")
+                    & Q(player_tuples__winner_race="T")
                     & Q(player_tuples__loser=player),
                 ),
             )
