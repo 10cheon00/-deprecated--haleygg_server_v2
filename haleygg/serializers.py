@@ -156,8 +156,8 @@ class PlayerTupleSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             "id": {"read_only": False, "required": False},
-            "winner_race": {"required": False},
-            "loser_race": {"required": False},
+            "winner_race": {"required": False, "allow_blank": True},
+            "loser_race": {"required": False, "allow_blank": True},
         }
         list_serializer_class = PlayerTupleListSerializer
 
@@ -183,7 +183,7 @@ class MatchSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "date": {"required": True},
             "title": {"required": True},
-            "miscellaneous": {"required": False},
+            "miscellaneous": {"required": False, "allow_blank": True},
         }
         validators = [
             UniqueTogetherValidator(
