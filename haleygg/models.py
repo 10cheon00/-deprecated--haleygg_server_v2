@@ -21,6 +21,11 @@ class Map(models.Model):
         verbose_name="맵 이미지",
         null=True,
     )
+    type = models.CharField(
+        choices=[("melee", "Melee"), ("top_and_bottom", "Top And Bottom")],
+        default="melee",
+        max_length=15,
+    )
 
     def __str__(self):
         return self.name

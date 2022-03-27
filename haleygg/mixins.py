@@ -3,8 +3,22 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters.rest_framework import FilterSet
 from django_filters.rest_framework import ModelMultipleChoiceFilter
 
+from haleygg.models import Map
 from haleygg.models import Match
 from haleygg.models import Player
+
+
+class MapFilterSet(FilterSet):
+    class Meta:
+        model = Map
+        fields = [
+            "type",
+        ]
+
+
+class MapFilterMixin(object):
+    filter_backends = [DjangoFilterBackend]
+    filter_class = MapFilterSet
 
 
 class MatchFilterSet(FilterSet):
