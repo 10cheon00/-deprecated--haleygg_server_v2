@@ -4,6 +4,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from haleygg.mixins import MapFilterMixin
 from haleygg.mixins import MatchFilterMixin
 from haleygg.models import League
 from haleygg.models import Map
@@ -39,7 +40,7 @@ class PlayerViewSet(ModelViewSet):
     lookup_field = "name__iexact"
 
 
-class MapViewSet(ModelViewSet):
+class MapViewSet(MapFilterMixin, ModelViewSet):
     serializer_class = MapSerializer
     queryset = Map.objects.all()
 
