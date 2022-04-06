@@ -4,10 +4,13 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import include
 
+urlpatterns = []
 
-urlpatterns = [
+if settings.DEBUG:
+    urlpatterns += path("__debug__/", include("debug_toolbar.urls"))
+
+urlpatterns += [
     path("admin/", admin.site.urls),
-    path("__debug__/", include("debug_toolbar.urls")),
     path("api/", include("haleygg.urls")),
     path("api/auth/", include("haleygg_auth.urls")),
     path("api/elo/", include("haleygg_elo.urls")),

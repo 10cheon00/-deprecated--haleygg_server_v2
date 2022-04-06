@@ -1,5 +1,17 @@
 from haleygg_server.settings.base import *
 
+
+ALLOWED_HOSTS += ["127.0.0.1"]
+
+DEBUG = True
+
+INSTALLED_APPS += [
+    "debug_toolbar",
+]
+
+WSGI_APPLICATION = "haleygg_server.wsgi.local.application"
+
+
 # REST_FRAMEWORK
 
 REST_FRAMEWORK = {
@@ -17,12 +29,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ALLOW_CREDENTIALS = True
 
-
-ALLOWED_HOSTS += ["127.0.0.1"]
-
-INSTALLED_APPS += [
-    "debug_toolbar",
-]
+# DEBUG TOOLBAR
 
 INTERNAL_IPS = [
     "127.0.0.1",
@@ -31,5 +38,3 @@ INTERNAL_IPS = [
 MIDDLEWARE += [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
-
-DEBUG = True
