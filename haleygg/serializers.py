@@ -29,7 +29,7 @@ class LeagueSerializer(serializers.ModelSerializer):
 class MapSerializer(serializers.ModelSerializer):
     class Meta:
         model = Map
-        fields = ["id", "name", "image"]
+        fields = ["id", "name", "image", "type"]
 
 
 class PlayerSerializer(serializers.ModelSerializer):
