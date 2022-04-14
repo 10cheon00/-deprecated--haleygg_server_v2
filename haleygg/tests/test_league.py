@@ -1,14 +1,8 @@
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.urls import include
-from django.urls import path
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from rest_framework.test import URLPatternsTestCase
 
-
-class HaleyggUrlPatternsTestMixin(URLPatternsTestCase):
-    urlpatterns = [path("api/", include("haleygg.urls"))]
+from haleygg.tests.mixins import HaleyggUrlPatternsTestMixin
 
 
 class LeagueTest(APITestCase, HaleyggUrlPatternsTestMixin):
