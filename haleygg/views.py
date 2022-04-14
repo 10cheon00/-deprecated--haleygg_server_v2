@@ -44,6 +44,7 @@ class PlayerViewSet(ModelViewSet):
 class MapViewSet(MapFilterMixin, ModelViewSet):
     serializer_class = MapSerializer
     queryset = Map.objects.all()
+    lookup_field = "name__iexact"
 
 
 class MatchPagination(PageNumberPagination):
