@@ -23,6 +23,7 @@ from haleygg_elo.models import update_all_elo_related_with_league
 class LeagueViewSet(ModelViewSet):
     serializer_class = LeagueSerializer
     queryset = League.objects.all()
+    lookup_field = "name__iexact"
 
     def list(self, request, *args, **kwargs):
         is_elo_rating_active = request.query_params.get("is_elo_rating_active")
