@@ -1,3 +1,4 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import include
 from django.urls import path
 from django.urls import reverse
@@ -30,28 +31,28 @@ class LeagueTest(APITestCase, HaleyggUrlPatternsTestMixin):
 
     def test_create_league_using_conflicts_names(self):
         response = self.client.post(self.url, self.league)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         response = self.client.post(self.url, self.league)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_retrieve_leagues(self):
         response = self.client.post(self.url, self.league)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.league["name"] = "Another League"
         response = self.client.post(self.url, self.league)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreater(len(response.data), 0)
 
+    def test_retrieve_a_league(self):
+        response = self.client.post(self.url, self.league)
+
         response = self.client.get(
-            reverse("league-detail", kwargs={"name__iexact": "Another League"})
+            reverse("league-detail", kwargs={"name__iexact": self.league["name"]})
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["name"], "Another League")
+        self.assertEqual(response.data["name"], self.league["name"])
 
     def test_retrieve_leagues_only_elo_rating_active_is_true(self):
         another_league = {"name": "Another League", "is_elo_rating_active": True}
