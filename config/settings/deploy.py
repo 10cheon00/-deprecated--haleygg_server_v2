@@ -1,4 +1,4 @@
-from haleygg_server.settings.base import *
+from config.settings.base import *
 
 
 ALLOWED_HOSTS = []

@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 
-with open("haleygg_server/settings/secrets.json") as f:
+with open("config/settings/secrets.json") as f:
     secrets = json.loads(f.read())
 
 
@@ -78,7 +78,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "haleygg_server.urls"
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
@@ -96,7 +96,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "haleygg_server.wsgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database

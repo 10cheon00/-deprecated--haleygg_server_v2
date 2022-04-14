@@ -1,4 +1,4 @@
-from haleygg_server.settings.base import *
+from config.settings.base import *
 
 
 ALLOWED_HOSTS += ["127.0.0.1"]
@@ -9,7 +9,7 @@ INSTALLED_APPS += [
     "debug_toolbar",
 ]
 
-WSGI_APPLICATION = "haleygg_server.wsgi.local.application"
+WSGI_APPLICATION = "config.wsgi.local.application"
 
 
 # REST_FRAMEWORK
