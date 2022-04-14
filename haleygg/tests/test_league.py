@@ -48,7 +48,7 @@ class LeagueTest(APITestCase, HaleyggUrlPatternsTestMixin):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], self.league["name"])
 
-    def test_retrieve_leagues_only_elo_rating_active_is_true(self):
+    def test_retrieve_elo_rating_active_leagues(self):
         another_league = {"name": "Another League", "is_elo_rating_active": True}
         self.client.post(self.url, self.league)
         self.client.post(self.url, another_league)
