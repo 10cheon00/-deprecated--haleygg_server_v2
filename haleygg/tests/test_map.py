@@ -57,16 +57,7 @@ class MapTest(APITestCase, HaleyggUrlPatternsTestMixin):
 
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(response.data), 0)
-
-    def test_retrieve_a_map(self):
-        self.client.post(self.url, self.map)
-
-        response = self.client.get(
-            reverse("map-detail", kwargs={"name__iexact": self.map["name"]})
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["name"], self.map["name"])
+        self.assertGreater(len(response.data), 1)
 
     def test_retrieve_melee_type_maps(self):
         self.client.post(self.url, self.map)
@@ -78,38 +69,58 @@ class MapTest(APITestCase, HaleyggUrlPatternsTestMixin):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
+    def test_retrieve_a_map(self):
+        self.client.post(self.url, self.map)
+
+        response = self.client.get(
+            reverse("map-detail", kwargs={"name__iexact": self.map["name"]})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], self.map["name"])
+
+    def test_retrieve_a_map_using_uppercase_name(self):
+        self.client.post(self.url, self.map)
+
+        response = self.client.get(
+            reverse("map-detail", kwargs={"name__iexact": self.map["name"].upper()})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], self.map["name"])
+
     def test_update_a_map(self):
         self.client.post(self.url, self.map)
 
-        self.map["name"] = "Updated Map"
+        map = {"name": "Updated Map", "type": "top_and_bottom"}
         response = self.client.put(
-            reverse("map-detail", kwargs={"name__iexact": "Sample Map"}), self.map
+            reverse("map-detail", kwargs={"name__iexact": self.map["name"]}), map
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_a_map_using_image(self):
         self.client.post(self.url, self.map)
 
-        self.map["image"] = SimpleUploadedFile(
+        image = SimpleUploadedFile(
             name="image.png",
             content=open("config/media/images/image.png", "rb").read(),
             content_type="image/png",
         )
+        map = {"name": "Updated Map", "image": image}
         response = self.client.put(
-            reverse("map-detail", kwargs={"name__iexact": "Sample Map"}), self.map
+            reverse("map-detail", kwargs={"name__iexact": self.map["name"]}), map
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_a_map_using_large_image(self):
         self.client.post(self.url, self.map)
 
-        self.map["image"] = SimpleUploadedFile(
-            name="large_image.png",
+        large_image = SimpleUploadedFile(
+            name="image.png",
             content=open("config/media/images/large_image.png", "rb").read(),
             content_type="image/png",
         )
+        map = {"name": "Updated Map", "image": large_image}
         response = self.client.put(
-            reverse("map-detail", kwargs={"name__iexact": "Sample Map"}), self.map
+            reverse("map-detail", kwargs={"name__iexact": self.map["name"]}), map
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

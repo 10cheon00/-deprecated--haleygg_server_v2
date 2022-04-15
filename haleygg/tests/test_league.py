@@ -39,15 +39,6 @@ class LeagueTest(APITestCase, HaleyggUrlPatternsTestMixin):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreater(len(response.data), 0)
 
-    def test_retrieve_a_league(self):
-        response = self.client.post(self.url, self.league)
-
-        response = self.client.get(
-            reverse("league-detail", kwargs={"name__iexact": self.league["name"]})
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["name"], self.league["name"])
-
     def test_retrieve_elo_rating_active_leagues(self):
         another_league = {"name": "Another League", "is_elo_rating_active": True}
         self.client.post(self.url, self.league)
@@ -58,6 +49,26 @@ class LeagueTest(APITestCase, HaleyggUrlPatternsTestMixin):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
+
+    def test_retrieve_a_league(self):
+        response = self.client.post(self.url, self.league)
+
+        response = self.client.get(
+            reverse("league-detail", kwargs={"name__iexact": self.league["name"]})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], self.league["name"])
+
+    def test_retrieve_a_league_using_uppercase_name(self):
+        response = self.client.post(self.url, self.league)
+
+        response = self.client.get(
+            reverse(
+                "league-detail", kwargs={"name__iexact": self.league["name"].upper()}
+            )
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], self.league["name"])
 
     def test_update_a_league(self):
         self.client.post(self.url, self.league)
