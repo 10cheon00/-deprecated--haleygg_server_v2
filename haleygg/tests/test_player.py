@@ -24,7 +24,7 @@ class PlayerTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_a_player_using_invalid_race(self):
-        self.player["favorate_race"] = "invalid_type"
+        self.player["favorate_race"] = "A"
         response = self.client.post(self.url, self.player)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
