@@ -36,7 +36,7 @@ class Player(models.Model):
     name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
     joined_date = models.DateField(default=timezone.now, verbose_name="가입한 날짜")
     favorate_race = models.CharField(
-        choices=RACE_LIST, default="", max_length=10, verbose_name="선호 종족"
+        choices=RACE_LIST, default="", max_length=1, verbose_name="선호 종족"
     )
     career = models.TextField(
         default="", max_length=1000, null=True, blank=True, verbose_name="커리어"
@@ -73,7 +73,9 @@ class Match(models.Model):
 
     class Meta:
         ordering = ("date", "league", "title")
-        unique_together = ("league", "title")
+        constraints = [
+            models.UniqueConstraint(fields=["league", "title"], name="unique match")
+        ]
 
     def __str__(self):
         return f"Date: {self.date}, League: {self.league_id}, Title: {self.title}, Map: {self.map_id}"
@@ -83,7 +85,11 @@ class Match(models.Model):
 
 
 class PlayerTuple(models.Model):
-    RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
+    RACE_LIST = [
+        ("P", "Protoss"),
+        ("T", "Terran"),
+        ("Z", "Zerg"),
+    ]
     match = models.ForeignKey(
         Match, on_delete=models.CASCADE, related_name="player_tuples"
     )
@@ -96,16 +102,14 @@ class PlayerTuple(models.Model):
     winner_race = models.CharField(
         choices=RACE_LIST,
         default="",
-        max_length=10,
+        max_length=1,
         verbose_name="승리자 종족",
-        null=True,
     )
     loser_race = models.CharField(
         choices=RACE_LIST,
         default="",
-        max_length=10,
+        max_length=1,
         verbose_name="패배자 종족",
-        null=True,
     )
 
     class Meta:

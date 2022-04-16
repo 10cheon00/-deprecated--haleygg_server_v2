@@ -46,30 +46,38 @@ class PlayerSerializer(serializers.ModelSerializer):
 
 class PlayerTupleListSerializer(serializers.ListSerializer):
     def validate(self, player_tuples):
-        self.error_msg = []
+        error_msg = []
+
+        is_melee_match = len(player_tuples) == 1
+
+        if is_melee_match:
+            if not player_tuples[0]["winner_race"]:
+                error_msg.append({"winner_race": "개인전은 플레이어의 종족값이 필요합니다."})
+            if not player_tuples[0]["loser_race"]:
+                error_msg.append({"loser_race": "개인전은 플레이어의 종족값이 필요합니다."})
 
         players = []
         for player_tuple in player_tuples:
             winner_name = player_tuple.get("winner").name
 
-            if not Player.objects.filter(name=winner_name).exists():
-                self.error_msg.append(f"플레이어 {winner_name}은 존재하지 않습니다.")
+            if not Player.objects.filter(name__iexact=winner_name).exists():
+                error_msg.append({"winner": f"플레이어 {winner_name}은 존재하지 않습니다."})
             else:
                 if winner_name in players:
-                    self.error_msg.append(f"플레이어 {winner_name}가 중복되었습니다.")
+                    error_msg.append({"winner": f"플레이어 {winner_name}가 중복되었습니다."})
                 players.append(winner_name)
 
             loser_name = player_tuple.get("loser").name
 
-            if not Player.objects.filter(name=loser_name).exists():
-                self.error_msg.append(f"플레이어 {loser_name}은 존재하지 않습니다.")
+            if not Player.objects.filter(name__iexact=loser_name).exists():
+                error_msg.append({"loser": f"플레이어 {loser_name}은 존재하지 않습니다."})
             else:
                 if loser_name in players:
-                    self.error_msg.append(f"플레이어 {loser_name}가 중복되었습니다.")
+                    error_msg.append({"loser": f"플레이어 {loser_name}가 중복되었습니다."})
                 players.append(loser_name)
 
-        if self.error_msg:
-            raise serializers.ValidationError(self.error_msg)
+        if error_msg:
+            raise serializers.ValidationError(error_msg)
 
         return player_tuples
 
@@ -142,8 +150,16 @@ class CreatableSlugRelatedField(serializers.SlugRelatedField):
 
 
 class PlayerTupleSerializer(serializers.ModelSerializer):
+    RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg"), ("", "")]
+
     winner = CreatableSlugRelatedField(queryset=Player.objects.all(), slug_field="name")
     loser = CreatableSlugRelatedField(queryset=Player.objects.all(), slug_field="name")
+    winner_race = serializers.ChoiceField(
+        allow_null=True, choices=RACE_LIST, default="", required=False
+    )
+    loser_race = serializers.ChoiceField(
+        allow_null=True, choices=RACE_LIST, default="", required=False
+    )
 
     class Meta:
         model = PlayerTuple
@@ -156,10 +172,21 @@ class PlayerTupleSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             "id": {"read_only": False, "required": False},
-            "winner_race": {"required": False, "allow_blank": True},
-            "loser_race": {"required": False, "allow_blank": True},
         }
         list_serializer_class = PlayerTupleListSerializer
+
+
+class MatchListSerializer(serializers.ListSerializer):
+    def validate(self, matches):
+        match_names = []
+
+        for match in matches:
+            match_name = match["league"].name + match["title"]
+            if match_name in match_names:
+                raise serializers.ValidationError("이미 league와 title이 동일한 데이터가 존재합니다.")
+            match_names.append(match_name)
+
+        return matches
 
 
 class MatchSerializer(serializers.ModelSerializer):
@@ -167,7 +194,9 @@ class MatchSerializer(serializers.ModelSerializer):
         queryset=League.objects.all(), slug_field="name"
     )
     map = CreatableSlugRelatedField(queryset=Map.objects.all(), slug_field="name")
-    player_tuples = PlayerTupleSerializer(many=True, required=True, allow_empty=False)
+    player_tuples = PlayerTupleSerializer(
+        many=True, required=True, allow_empty=False, min_length=1
+    )
 
     class Meta:
         model = Match
@@ -187,9 +216,12 @@ class MatchSerializer(serializers.ModelSerializer):
         }
         validators = [
             UniqueTogetherValidator(
-                queryset=Match.objects.all(), fields=["league", "title"]
+                queryset=Match.objects.all(),
+                fields=["league", "title"],
+                message="이미 league와 title이 동일한 데이터가 존재합니다.",
             ),
         ]
+        list_serializer_class = MatchListSerializer
 
     def create(self, validated_data):
         self.get_data_from_validated_data(validated_data=validated_data)
