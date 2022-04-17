@@ -141,15 +141,21 @@ def calculate_elo(previous_elo_of_winner, previous_elo_of_loser, k):
     )
 
 
-def get_elo_history_of_player(league, player):
+def get_elo_history_of_player(league_name, player_name):
     return (
-        Elo.objects.filter(player_tuple__match__league=league)
-        .filter(Q(player_tuple__winner=player) | Q(player_tuple__loser=player))
+        Elo.objects.filter(player_tuple__match__league__name__iexact=league_name)
+        .filter(
+            Q(player_tuple__winner__name__iexact=player_name)
+            | Q(player_tuple__loser__name__iexact=player_name)
+        )
         .annotate(
             elo=Case(
-                When(condition=Q(player_tuple__winner=player), then=F("winner_rating")),
                 When(
-                    condition=Q(player_tuple__loser=player),
+                    condition=Q(player_tuple__winner__name__iexact=player_name),
+                    then=F("winner_rating"),
+                ),
+                When(
+                    condition=Q(player_tuple__loser__name__iexact=player_name),
                     then=F("loser_rating"),
                 ),
                 default=Decimal(1000.0),
@@ -160,9 +166,9 @@ def get_elo_history_of_player(league, player):
     )
 
 
-def get_elo_ranking(league):
+def get_elo_ranking(league_name):
     player_elo_queryset = (
-        Elo.objects.filter(player_tuple__match__league=league)
+        Elo.objects.filter(player_tuple__match__league__name__iexact=league_name)
         .filter(
             Q(player_tuple__winner=OuterRef("id"))
             | Q(player_tuple__loser=OuterRef("id"))
