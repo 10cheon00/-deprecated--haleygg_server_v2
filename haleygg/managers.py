@@ -73,94 +73,97 @@ class MatchStatisticsQueryset(models.QuerySet):
             ),
         )
 
-    def get_player_statistics(self, player):
+    def get_player_statistics(self, player_name):
         statistics = {}
-        statistics.update(self.get_player_melee_statistics(player))
-        statistics.update(self.get_player_top_and_bottom_statistics(player))
+        statistics.update(self.get_player_melee_statistics(player_name))
+        statistics.update(self.get_player_top_and_bottom_statistics(player_name))
         return statistics
 
-    def get_player_melee_statistics(self, player):
+    def get_player_melee_statistics(self, player_name):
         return (
             self.get_melee_matches()
-            .filter(Q(player_tuples__winner=player) | Q(player_tuples__loser=player))
+            .filter(
+                Q(player_tuples__winner__name__iexact=player_name)
+                | Q(player_tuples__loser__name__iexact=player_name)
+            )
             .aggregate(
                 winning_melee_matches_count=Count(
-                    "id", filter=Q(player_tuples__winner=player)
+                    "id", filter=Q(player_tuples__winner__name__iexact=player_name)
                 ),
                 losing_melee_matches_count=Count(
-                    "id", filter=Q(player_tuples__loser=player)
+                    "id", filter=Q(player_tuples__loser__name__iexact=player_name)
                 ),
                 protoss_wins_to_terran_count=Count(
                     "id",
                     filter=Q(player_tuples__winner_race="P")
                     & Q(player_tuples__loser_race="T")
-                    & Q(player_tuples__winner=player),
+                    & Q(player_tuples__winner__name__iexact=player_name),
                 ),
                 protoss_wins_to_zerg_count=Count(
                     "id",
                     filter=Q(player_tuples__winner_race="P")
                     & Q(player_tuples__loser_race="Z")
-                    & Q(player_tuples__winner=player),
+                    & Q(player_tuples__winner__name__iexact=player_name),
                 ),
                 terran_wins_to_protoss_count=Count(
                     "id",
                     filter=Q(player_tuples__winner_race="T")
                     & Q(player_tuples__loser_race="P")
-                    & Q(player_tuples__winner=player),
+                    & Q(player_tuples__winner__name__iexact=player_name),
                 ),
                 terran_wins_to_zerg_count=Count(
                     "id",
                     filter=Q(player_tuples__winner_race="T")
                     & Q(player_tuples__loser_race="Z")
-                    & Q(player_tuples__winner=player),
+                    & Q(player_tuples__winner__name__iexact=player_name),
                 ),
                 zerg_wins_to_terran_count=Count(
                     "id",
                     filter=Q(player_tuples__winner_race="Z")
                     & Q(player_tuples__loser_race="T")
-                    & Q(player_tuples__winner=player),
+                    & Q(player_tuples__winner__name__iexact=player_name),
                 ),
                 zerg_wins_to_protoss_count=Count(
                     "id",
                     filter=Q(player_tuples__winner_race="Z")
                     & Q(player_tuples__loser_race="P")
-                    & Q(player_tuples__winner=player),
+                    & Q(player_tuples__winner__name__iexact=player_name),
                 ),
                 protoss_loses_to_terran_count=Count(
                     "id",
                     filter=Q(player_tuples__loser_race="P")
                     & Q(player_tuples__winner_race="T")
-                    & Q(player_tuples__loser=player),
+                    & Q(player_tuples__loser__name__iexact=player_name),
                 ),
                 protoss_loses_to_zerg_count=Count(
                     "id",
                     filter=Q(player_tuples__loser_race="P")
                     & Q(player_tuples__winner_race="Z")
-                    & Q(player_tuples__loser=player),
+                    & Q(player_tuples__loser__name__iexact=player_name),
                 ),
                 terran_loses_to_protoss_count=Count(
                     "id",
                     filter=Q(player_tuples__loser_race="T")
                     & Q(player_tuples__winner_race="P")
-                    & Q(player_tuples__loser=player),
+                    & Q(player_tuples__loser__name__iexact=player_name),
                 ),
                 terran_loses_to_zerg_count=Count(
                     "id",
                     filter=Q(player_tuples__loser_race="T")
                     & Q(player_tuples__winner_race="Z")
-                    & Q(player_tuples__loser=player),
+                    & Q(player_tuples__loser__name__iexact=player_name),
                 ),
                 zerg_loses_to_protoss_count=Count(
                     "id",
                     filter=Q(player_tuples__loser_race="Z")
                     & Q(player_tuples__winner_race="P")
-                    & Q(player_tuples__loser=player),
+                    & Q(player_tuples__loser__name__iexact=player_name),
                 ),
                 zerg_loses_to_terran_count=Count(
                     "id",
                     filter=Q(player_tuples__loser_race="Z")
                     & Q(player_tuples__winner_race="T")
-                    & Q(player_tuples__loser=player),
+                    & Q(player_tuples__loser__name__iexact=player_name),
                 ),
             )
         )
@@ -170,16 +173,19 @@ class MatchStatisticsQueryset(models.QuerySet):
             player_tuples_count=1
         )
 
-    def get_player_top_and_bottom_statistics(self, player):
+    def get_player_top_and_bottom_statistics(self, player_name):
         return (
             self.get_top_and_bottom_matches()
-            .filter(Q(player_tuples__winner=player) | Q(player_tuples__loser=player))
+            .filter(
+                Q(player_tuples__winner__name__iexact=player_name)
+                | Q(player_tuples__loser__name__iexact=player_name)
+            )
             .aggregate(
                 winning_top_and_bottom_matches_count=Count(
-                    "id", filter=Q(player_tuples__winner=player)
+                    "id", filter=Q(player_tuples__winner__name__iexact=player_name)
                 ),
                 losing_top_and_bottom_matches_count=Count(
-                    "id", filter=Q(player_tuples__loser=player)
+                    "id", filter=Q(player_tuples__loser__name__iexact=player_name)
                 ),
             )
         )
