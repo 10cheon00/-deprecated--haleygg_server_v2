@@ -42,7 +42,7 @@ class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
                     "winner": self.players[0]["name"],
                     "loser": self.players[1]["name"],
                     "winner_race": "T",
-                    "loser_race": "T",
+                    "loser_race": "Z",
                 }
             ],
         }
@@ -57,7 +57,7 @@ class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
                         "winner": self.players[0]["name"],
                         "winner_race": "T",
                         "loser": self.players[1]["name"],
-                        "loser_race": "T",
+                        "loser_race": "R",
                     }
                 ],
             },
@@ -69,9 +69,9 @@ class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
                 "player_tuples": [
                     {
                         "winner": self.players[2]["name"],
-                        "winner_race": "T",
+                        "winner_race": "P",
                         "loser": self.players[3]["name"],
-                        "loser_race": "T",
+                        "loser_race": "R",
                     }
                 ],
             },
@@ -83,9 +83,9 @@ class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
                 "player_tuples": [
                     {
                         "winner": self.players[4]["name"],
-                        "winner_race": "T",
+                        "winner_race": "Z",
                         "loser": self.players[5]["name"],
-                        "loser_race": "T",
+                        "loser_race": "P",
                     }
                 ],
             },
@@ -131,6 +131,10 @@ class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
         response = self.client.post(self.url, self.match, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+        self.match["date"] = "2000.1.1"
+        response = self.client.post(self.url, self.match, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_create_a_match_without_map(self):
         self.match["map"] = None
         response = self.client.post(self.url, self.match, format="json")
@@ -159,6 +163,17 @@ class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         self.match["player_tuples"] = []
+        response = self.client.post(self.url, self.match, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.match["player_tuples"] = [
+            {
+                "winner": None,
+                "winner_race": None,
+                "loser": None,
+                "loser_race": None,
+            }
+        ]
         response = self.client.post(self.url, self.match, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -212,6 +227,53 @@ class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
 
         response = self.client.post(self.url, self.match, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_create_a_top_and_bottom_match_with_non_existent_players_in_player_tuples(
+        self,
+    ):
+        self.match["player_tuples"] = [
+            {"winner": "Non-existent player 1", "loser": "Non-existent player 2"},
+            {"winner": "Non-existent player 3", "loser": "Non-existent player 4"},
+            {"winner": "Non-existent player 5", "loser": "Non-existent player 6"},
+        ]
+
+        response = self.client.post(self.url, self.match, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.get(
+            reverse("player-detail", kwargs={"name__iexact": "Non-existent player 1"})
+        )
+        self.assertEqual(response.data["name"], "Non-existent player 1")
+        response = self.client.get(
+            reverse("player-detail", kwargs={"name__iexact": "Non-existent player 2"})
+        )
+        self.assertEqual(response.data["name"], "Non-existent player 2")
+        response = self.client.get(
+            reverse("player-detail", kwargs={"name__iexact": "Non-existent player 3"})
+        )
+        self.assertEqual(response.data["name"], "Non-existent player 3")
+        response = self.client.get(
+            reverse("player-detail", kwargs={"name__iexact": "Non-existent player 4"})
+        )
+        self.assertEqual(response.data["name"], "Non-existent player 4")
+        response = self.client.get(
+            reverse("player-detail", kwargs={"name__iexact": "Non-existent player 5"})
+        )
+        self.assertEqual(response.data["name"], "Non-existent player 5")
+        response = self.client.get(
+            reverse("player-detail", kwargs={"name__iexact": "Non-existent player 6"})
+        )
+        self.assertEqual(response.data["name"], "Non-existent player 6")
+
+    def test_create_a_top_and_bottom_match_with_corrupted_player_tuples(self):
+        self.match["player_tuples"] = [
+            {"winner": self.players[0]["name"], "loser": self.players[1]["name"]},
+            {"winner": None, "loser": self.players[3]["name"]},
+            {"winner": self.players[4]["name"], "loser": None},
+        ]
+
+        response = self.client.post(self.url, self.match, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_matches_on_single_request(self):
         response = self.client.post(self.url, self.matches, format="json")

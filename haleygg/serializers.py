@@ -150,7 +150,13 @@ class CreatableSlugRelatedField(serializers.SlugRelatedField):
 
 
 class PlayerTupleSerializer(serializers.ModelSerializer):
-    RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg"), ("", "")]
+    RACE_LIST = [
+        ("P", "Protoss"),
+        ("T", "Terran"),
+        ("Z", "Zerg"),
+        ("R", "Random"),
+        ("", ""),
+    ]
 
     winner = CreatableSlugRelatedField(queryset=Player.objects.all(), slug_field="name")
     loser = CreatableSlugRelatedField(queryset=Player.objects.all(), slug_field="name")

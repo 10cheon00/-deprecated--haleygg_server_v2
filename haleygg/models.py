@@ -85,11 +85,7 @@ class Match(models.Model):
 
 
 class PlayerTuple(models.Model):
-    RACE_LIST = [
-        ("P", "Protoss"),
-        ("T", "Terran"),
-        ("Z", "Zerg"),
-    ]
+    RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg"), ("R", "Random")]
     match = models.ForeignKey(
         Match, on_delete=models.CASCADE, related_name="player_tuples"
     )
