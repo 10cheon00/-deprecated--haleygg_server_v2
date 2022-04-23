@@ -8,8 +8,8 @@ from haleygg.tests.mixins import HaleyggUrlPatternsTestMixin
 class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
     @classmethod
     def setUpTestData(cls):
-        cls.league = {"name": "Sample league"}
-        cls.another_league = {"name": "Another league"}
+        cls.league = {"name": "Sample league", "type": "proleague"}
+        cls.another_league = {"name": "Another league", "type": "starleague"}
 
         cls.map = {"name": "Sample map"}
         cls.another_map = {"name": "Another map"}
@@ -304,6 +304,13 @@ class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
         self.assertTrue("results" in data_keys)
 
         self.assertEqual(len(response.data["results"]), 3)
+
+    def test_retrieve_proleague_matches(self):
+        self.client.post(self.url, self.matches, format="json")
+
+        response = self.client.get(self.url, data={"league__type": "proleague"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 1)
 
     def test_retrieve_matches_related_with_query_parameters(self):
         self.client.post(self.url, self.matches, format="json")
