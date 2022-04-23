@@ -18,12 +18,8 @@ from haleygg_elo.models import update_all_elo_related_with_league
 class LeagueSerializer(serializers.ModelSerializer):
     class Meta:
         model = League
-        fields = ["id", "name", "k_factor", "is_elo_rating_active"]
-        extra_kwargs = {
-            "name": {"required": True},
-            "k_factor": {"required": False},
-            "is_elo_rating_active": {"required": False},
-        }
+        fields = ["id", "name", "type"]
+        extra_kwargs = {"type": {"required": False}}
 
 
 class MapSerializer(serializers.ModelSerializer):

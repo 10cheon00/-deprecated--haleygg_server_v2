@@ -4,6 +4,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from haleygg.mixins import LeagueFilterMixin
 from haleygg.mixins import MapFilterMixin
 from haleygg.mixins import MatchFilterMixin
 from haleygg.models import League

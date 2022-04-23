@@ -27,6 +27,11 @@ class Map(models.Model):
         max_length=15,
     )
 
+    class Meta:
+        ordering = [
+            "-name",
+        ]
+
     def __str__(self):
         return self.name
 
@@ -42,14 +47,27 @@ class Player(models.Model):
         default="", max_length=1000, null=True, blank=True, verbose_name="커리어"
     )
 
+    class Meta:
+        ordering = ("name",)
+
     def __str__(self):
         return self.name
 
 
 class League(models.Model):
-    name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
-    k_factor = models.IntegerField(default=32)
-    is_elo_rating_active = models.BooleanField(default=False)
+    TYPE_LIST = [
+        ("starleague", "Starleague"),
+        ("proleague", "Proleague"),
+        ("other", "Other"),
+    ]
+    name = models.CharField(default="", max_length=30, unique=True)
+    type = models.CharField(choices=TYPE_LIST, default="other", max_length=10)
+
+    class Meta:
+        ordering = (
+            "type",
+            "-name",
+        )
 
     def __str__(self):
         return self.name
