@@ -301,12 +301,19 @@ class WinRatioByRaceSerializer(serializers.Serializer):
 
 
 class PlayerMatchSummarySerializer(WinRatioByRaceSerializer):
+    protoss_wins_to_protoss_count = serializers.IntegerField()
+    terran_wins_to_terran_count = serializers.IntegerField()
+    zerg_wins_to_zerg_count = serializers.IntegerField()
+
+    protoss_loses_to_protoss_count = serializers.IntegerField()
     protoss_loses_to_terran_count = serializers.IntegerField()
     protoss_loses_to_zerg_count = serializers.IntegerField()
     terran_loses_to_protoss_count = serializers.IntegerField()
+    terran_loses_to_terran_count = serializers.IntegerField()
     terran_loses_to_zerg_count = serializers.IntegerField()
     zerg_loses_to_protoss_count = serializers.IntegerField()
     zerg_loses_to_terran_count = serializers.IntegerField()
+    zerg_loses_to_zerg_count = serializers.IntegerField()
 
     winning_melee_matches_count = serializers.IntegerField()
     losing_melee_matches_count = serializers.IntegerField()
