@@ -32,125 +32,15 @@ class Elo(models.Model):
         return f"{self.player_tuple_id} Winner : {self.winner_rating} Loser : {self.loser_rating}"
 
 
-def create_elo(player_tuple):
-    previous_elo_queryset = Elo.objects.filter(
-        Q(player_tuple__match__league=player_tuple.match.league)
-        & (
-            Q(player_tuple__match__date__lt=player_tuple.match.date)
-            | (
-                Q(player_tuple__match__date=player_tuple.match.date)
-                & Q(player_tuple__match__title__lt=player_tuple.match.title)
-            )
-        )
-    )
-
-    previous_elo_of_winner = previous_elo_queryset.filter(
-        Q(player_tuple__winner=player_tuple.winner)
-        | Q(player_tuple__loser=player_tuple.winner)
-    ).annotate(
-        previous_elo=Case(
-            When(
-                condition=Q(player_tuple__winner=player_tuple.winner),
-                then=F("winner_rating"),
-            ),
-            When(
-                condition=Q(player_tuple__loser=player_tuple.winner),
-                then=F("loser_rating"),
-            ),
-        )
-    )
-
-    previous_elo_of_loser = previous_elo_queryset.filter(
-        Q(player_tuple__winner=player_tuple.loser)
-        | Q(player_tuple__loser=player_tuple.loser)
-    ).annotate(
-        previous_elo=Case(
-            When(
-                condition=Q(player_tuple__winner=player_tuple.loser),
-                then=F("winner_rating"),
-            ),
-            When(
-                condition=Q(player_tuple__loser=player_tuple.loser),
-                then=F("loser_rating"),
-            ),
-        )
-    )
-
-    if previous_elo_of_winner.exists():
-        previous_elo_of_winner = previous_elo_of_winner.last().previous_elo
-    else:
-        previous_elo_of_winner = Decimal(1000.0)
-
-    if previous_elo_of_loser.exists():
-        previous_elo_of_loser = previous_elo_of_loser.last().previous_elo
-    else:
-        previous_elo_of_loser = Decimal(1000.0)
-
-    calculated_elo_of_winner, calculated_elo_of_loser = calculate_elo(
-        previous_elo_of_winner=previous_elo_of_winner,
-        previous_elo_of_loser=previous_elo_of_loser,
-        k=player_tuple.match.league.k_factor,
-    )
-
-    Elo.objects.create(
-        player_tuple=player_tuple,
-        winner_rating=calculated_elo_of_winner,
-        loser_rating=calculated_elo_of_loser,
-    )
-
-    if (
-        Match.objects.filter(league=player_tuple.match.league).last()
-        != player_tuple.match
-    ):
-        update_all_elo_related_with_league(league=player_tuple.match.league)
-
-
-def update_all_elo_related_with_league(league):
-    queryset = Elo.objects.filter(player_tuple__match__league=league)
-    previous_elo_data = dict()
-    for row in queryset:
-        previous_elo_of_winner = previous_elo_data.get(
-            row.player_tuple.winner, Decimal(1000.0)
-        )
-        previous_elo_of_loser = previous_elo_data.get(
-            row.player_tuple.loser, Decimal(1000.0)
-        )
-        calculated_elo_of_winner, calculated_elo_of_loser = calculate_elo(
-            previous_elo_of_winner=previous_elo_of_winner,
-            previous_elo_of_loser=previous_elo_of_loser,
-            k=row.player_tuple.match.league.k_factor,
-        )
-        row.winner_rating = calculated_elo_of_winner
-        row.loser_rating = calculated_elo_of_loser
-        previous_elo_data[row.player_tuple.winner] = calculated_elo_of_winner
-        previous_elo_data[row.player_tuple.loser] = calculated_elo_of_loser
-
-    Elo.objects.bulk_update(queryset, ["winner_rating", "loser_rating"])
-
-
-def calculate_elo(previous_elo_of_winner, previous_elo_of_loser, k):
-    import math
-
-    winner_expected_winning_percentage = Decimal(
-        1 / (math.pow(10, (previous_elo_of_loser - previous_elo_of_winner) / 400) + 1)
-    )
-    calculated_elo_of_winner = k * (1 - winner_expected_winning_percentage)
-    calculated_elo_of_loser = -1 * calculated_elo_of_winner
+def get_elo_history_of_player(league_type, player_name):
     return (
-        previous_elo_of_winner + calculated_elo_of_winner,
-        previous_elo_of_loser + calculated_elo_of_loser,
-    )
-
-
-def get_elo_history_of_player(league_name, player_name):
-    return (
-        Elo.objects.filter(player_tuple__match__league__name__iexact=league_name)
+        Elo.objects.filter(player_tuple__match__league__type=league_type)
         .filter(
             Q(player_tuple__winner__name__iexact=player_name)
             | Q(player_tuple__loser__name__iexact=player_name)
         )
         .annotate(
-            elo=Case(
+            rating=Case(
                 When(
                     condition=Q(player_tuple__winner__name__iexact=player_name),
                     then=F("winner_rating"),
@@ -163,13 +53,16 @@ def get_elo_history_of_player(league_name, player_name):
             ),
             date=F("player_tuple__match__date"),
         )
-        .values("elo", "date")
+        .values("rating", "date")
     )
 
 
-def get_elo_ranking(league_name):
+def get_elo_ranking(league_type):
     player_elo_queryset = (
-        Elo.objects.filter(player_tuple__match__league__name__iexact=league_name)
+        Elo.objects.select_related(
+            "player_tuple", "player_tuple__match", "player_tuple__match__league"
+        )
+        .filter(player_tuple__match__league__type=league_type)
         .filter(
             Q(player_tuple__winner=OuterRef("id"))
             | Q(player_tuple__loser=OuterRef("id"))
@@ -197,3 +90,64 @@ def get_elo_ranking(league_name):
         .order_by("-current_elo")
     )
     return ranking_queryset
+
+
+def create_total_elo_data(league_type):
+    player_tuples_queryset = PlayerTuple.objects.select_related(
+        "match", "winner", "loser", "match__league"
+    ).filter(match__league__type=league_type)
+
+    duplicated_matches_count = (
+        player_tuples_queryset.filter(match=OuterRef("match"))
+        .values("match")
+        .annotate(match_count=Count("match"))
+        .values("match_count")[:1]
+    )
+
+    melee_player_tuples = player_tuples_queryset.annotate(
+        duplicated_matches_count=Subquery(duplicated_matches_count)
+    ).exclude(duplicated_matches_count__gt=1)
+
+    ratings = list()
+    previous_rating_data = dict()
+
+    for row in melee_player_tuples.iterator():
+        import math
+
+        # Get previous player rating
+        winner = row.winner
+        previous_winner_rating = (
+            previous_rating_data[winner]
+            if winner in previous_rating_data.keys()
+            else Decimal(1000.0)
+        )
+        loser = row.loser
+        previous_loser_rating = (
+            previous_rating_data[loser]
+            if loser in previous_rating_data.keys()
+            else Decimal(1000.0)
+        )
+
+        # Calculate
+        expected_winner_winning_rate = Decimal(
+            1
+            / (math.pow(10, (previous_loser_rating - previous_winner_rating) / 400) + 1)
+        )
+
+        winner_rating = K_FACTOR * (1 - expected_winner_winning_rate)
+        loser_rating = -1 * winner_rating
+        calculated_winner_rating = previous_winner_rating + winner_rating
+        calculated_loser_rating = previous_loser_rating + loser_rating
+
+        # Save and memorize
+        previous_rating_data[winner] = calculated_winner_rating
+        previous_rating_data[loser] = calculated_loser_rating
+        ratings.append(
+            Elo(
+                player_tuple_id=row.id,
+                winner_rating=calculated_winner_rating,
+                loser_rating=calculated_loser_rating,
+            )
+        )
+
+    print(len(Elo.objects.bulk_create(ratings)))
