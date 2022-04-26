@@ -18,22 +18,12 @@ from haleygg.serializers import LeagueSerializer
 from haleygg.serializers import PlayerMatchSummarySerializer
 from haleygg.serializers import PlayerSerializer
 from haleygg.serializers import WinRatioByRaceSerializer
-from haleygg_elo.models import update_all_elo_related_with_league
 
 
-class LeagueViewSet(ModelViewSet):
+class LeagueViewSet(LeagueFilterMixin, ModelViewSet):
     serializer_class = LeagueSerializer
     queryset = League.objects.all()
     lookup_field = "name__iexact"
-
-    def list(self, request, *args, **kwargs):
-        is_elo_rating_active = request.query_params.get("is_elo_rating_active")
-        if is_elo_rating_active:
-            queryset = League.objects.filter(is_elo_rating_active=is_elo_rating_active)
-        else:
-            queryset = League.objects.all()
-        serializer = self.get_serializer(instance=queryset, many=True)
-        return Response(serializer.data)
 
 
 class PlayerViewSet(ModelViewSet):
@@ -60,13 +50,6 @@ class MatchViewSet(MatchFilterMixin, ModelViewSet):
         .all()
     )
     pagination_class = MatchPagination
-
-    def perform_destroy(self, instance):
-        league = instance.league
-        is_melee_match = instance.player_tuples.count() == 1
-        instance.delete()
-        if is_melee_match and league.is_elo_rating_active:
-            update_all_elo_related_with_league(league)
 
     def create(self, request, *args, **kwargs):
         is_many = isinstance(request.data, list)

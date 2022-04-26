@@ -2,27 +2,28 @@ from decimal import Decimal
 
 from django.db import models
 from django.db.models import Case
+from django.db.models import Count
 from django.db.models import F
 from django.db.models import Q
 from django.db.models import OuterRef
 from django.db.models import Subquery
 from django.db.models import When
 
-from haleygg.models import Match
 from haleygg.models import Player
 from haleygg.models import PlayerTuple
+
+
+K_FACTOR = 32
 
 
 class Elo(models.Model):
     player_tuple = models.OneToOneField(PlayerTuple, on_delete=models.CASCADE)
     winner_rating = models.DecimalField(
-        default=1000.0, max_digits=6, decimal_places=1, verbose_name="승리자 Elo"
+        default=1000.0, max_digits=6, decimal_places=1, verbose_name="승자 Elo"
     )
     loser_rating = models.DecimalField(
-        default=1000.0, max_digits=6, decimal_places=1, verbose_name="패배자 Elo"
+        default=1000.0, max_digits=6, decimal_places=1, verbose_name="패자 Elo"
     )
-
-    objects = models.Manager()
 
     class Meta:
         ordering = ("player_tuple",)

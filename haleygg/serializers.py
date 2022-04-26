@@ -11,8 +11,6 @@ from haleygg.models import Map
 from haleygg.models import Match
 from haleygg.models import Player
 from haleygg.models import PlayerTuple
-from haleygg_elo.models import create_elo
-from haleygg_elo.models import update_all_elo_related_with_league
 
 
 class LeagueSerializer(serializers.ModelSerializer):
@@ -232,9 +230,6 @@ class MatchSerializer(serializers.ModelSerializer):
             self.create_match()
             self.create_player_tuples()
 
-            self.league = self.match.league
-            if self.is_melee_match() and self.is_league_elo_rating_active():
-                create_elo(player_tuple=self.player_tuples_instance[0])
         return self.match
 
     def get_data_from_validated_data(self, validated_data):
@@ -271,21 +266,10 @@ class MatchSerializer(serializers.ModelSerializer):
                 validated_data=player_tuples_validated_data,
             )
             instance = super().update(instance=instance, validated_data=validated_data)
-
-            self.league = instance.league
-            if (
-                self.is_melee_match()
-                and self.is_league_elo_rating_active()
-                and self.player_tuples_changed()
-            ):
-                update_all_elo_related_with_league(league=self.league)
             return instance
 
     def is_melee_match(self):
         return len(self.player_tuples_instance) == 1
-
-    def is_league_elo_rating_active(self):
-        return self.league.is_elo_rating_active
 
     def player_tuples_changed(self):
         return self.player_serializer.has_changed
