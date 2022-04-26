@@ -108,6 +108,6 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
         if self.player:
             return queryset.get_player_statistics(self.player)
         elif self.map:
-            return queryset.get_map_statistics(self.map)
+            return queryset.get_map_statistics()
         else:
             return queryset.get_win_ratio_by_race()
