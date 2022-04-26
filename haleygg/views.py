@@ -84,7 +84,7 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
     )
 
     def get_serializer_class(self):
-        if self.players:
+        if self.player:
             return PlayerMatchSummarySerializer
         if self.map:
             return MapStatisticsSerializer
@@ -100,11 +100,13 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
     def aggregate_queryset(self):
         queryset = self.filter_queryset(self.get_queryset())
 
-        self.players = self.request.query_params.get("players")
+        # By using parameter "player", avoid wrong filtering.
+        # Not "players".
+        self.player = self.request.query_params.get("player")
         self.map = self.request.query_params.get("map")
 
-        if self.players:
-            return queryset.get_player_statistics(self.players)
+        if self.player:
+            return queryset.get_player_statistics(self.player)
         elif self.map:
             return queryset.get_map_statistics(self.map)
         else:

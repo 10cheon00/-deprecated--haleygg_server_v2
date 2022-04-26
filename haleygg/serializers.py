@@ -268,12 +268,6 @@ class MatchSerializer(serializers.ModelSerializer):
             instance = super().update(instance=instance, validated_data=validated_data)
             return instance
 
-    def is_melee_match(self):
-        return len(self.player_tuples_instance) == 1
-
-    def player_tuples_changed(self):
-        return self.player_serializer.has_changed
-
 
 class WinRatioByRaceSerializer(serializers.Serializer):
     protoss_wins_to_terran_count = serializers.IntegerField()

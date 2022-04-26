@@ -4,7 +4,7 @@ from django.db.models import Q
 
 
 class MatchStatisticsQueryset(models.QuerySet):
-    def get_map_statistics(self, map):
+    def get_map_statistics(self):
         return self.get_melee_matches().aggregate(
             total_matches_count=Count("id"),
             protoss_wins_to_terran_count=Count(
