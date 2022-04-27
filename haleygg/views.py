@@ -20,22 +20,24 @@ from haleygg.serializers import PlayerSerializer
 from haleygg.serializers import WinRatioByRaceSerializer
 
 
-class LeagueViewSet(LeagueFilterMixin, ModelViewSet):
+class LookupMixin(object):
+    lookup_field = "name__iexact"
+    lookup_value_regex = "[^/]+"
+
+
+class LeagueViewSet(LookupMixin, LeagueFilterMixin, ModelViewSet):
     serializer_class = LeagueSerializer
     queryset = League.objects.all()
-    lookup_field = "name__iexact"
 
 
-class PlayerViewSet(ModelViewSet):
+class PlayerViewSet(LookupMixin, ModelViewSet):
     serializer_class = PlayerSerializer
     queryset = Player.objects.all()
-    lookup_field = "name__iexact"
 
 
-class MapViewSet(MapFilterMixin, ModelViewSet):
+class MapViewSet(LookupMixin, MapFilterMixin, ModelViewSet):
     serializer_class = MapSerializer
     queryset = Map.objects.all()
-    lookup_field = "name__iexact"
 
 
 class MatchPagination(PageNumberPagination):
