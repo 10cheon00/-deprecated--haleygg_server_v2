@@ -131,4 +131,3 @@ class PlayerTuple(models.Model):
 
     def __str__(self):
         return f"Match: {self.match_id}"
-        #  Winner: {self.winner} ({self.winner_race}) Loser: {self.loser} ({self.loser_race})
