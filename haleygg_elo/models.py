@@ -150,4 +150,4 @@ def create_total_elo_data(league_type):
             )
         )
 
-    print(len(Elo.objects.bulk_create(ratings)))
+    Elo.objects.bulk_create(ratings)

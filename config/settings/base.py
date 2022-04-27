@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "haleygg",
     "haleygg_elo",
     "haleygg_auth",
+    "haleygg_tier",
 ]
 
 MIDDLEWARE = [
