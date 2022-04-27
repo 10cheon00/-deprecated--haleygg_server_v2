@@ -82,7 +82,8 @@ def get_elo_ranking(league_type):
         )
     )
     ranking_queryset = (
-        Player.objects.annotate(
+        Player.objects.filter(active=True)
+        .annotate(
             current_elo=Subquery(player_elo_queryset.reverse().values("elo")[:1]),
         )
         .filter(current_elo__isnull=False)

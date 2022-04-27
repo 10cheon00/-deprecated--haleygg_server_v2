@@ -46,6 +46,7 @@ class Player(models.Model):
     career = models.TextField(
         default="", max_length=1000, null=True, blank=True, verbose_name="커리어"
     )
+    active = models.BooleanField(default=True, verbose_name="현재 가입 여부")
 
     class Meta:
         ordering = ("name",)

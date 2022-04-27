@@ -89,7 +89,7 @@ class MatchAdmin(admin.ModelAdmin):
 
 
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ("name", "favorate_race", "joined_date")
+    list_display = ("name", "favorate_race", "joined_date", "active")
 
 
 admin.site.register(League)
