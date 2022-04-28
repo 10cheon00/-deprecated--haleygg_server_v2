@@ -23,3 +23,6 @@ class PlayerTier(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["league", "player"], name="unique tier")
         ]
+
+    def __str__(self):
+        return f"{self.league} - {self.player}"
