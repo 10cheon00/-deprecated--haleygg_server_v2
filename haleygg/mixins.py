@@ -10,6 +10,19 @@ from haleygg.models import Match
 from haleygg.models import Player
 
 
+class LeagueFilterSet(FilterSet):
+    class Meta:
+        model = League
+        fields = [
+            "type",
+        ]
+
+
+class LeagueFilterMixin(object):
+    filter_backends = [DjangoFilterBackend]
+    filter_class = LeagueFilterSet
+
+
 class MapFilterSet(FilterSet):
     class Meta:
         model = Map
@@ -28,13 +41,14 @@ class MatchFilterSet(FilterSet):
     map = ModelChoiceFilter(queryset=Map.objects.all(), to_field_name="name")
     players = ModelMultipleChoiceFilter(
         method="get_player",
+        field_name="player_tuples",
         queryset=Player.objects.all(),
         to_field_name="name",
     )
 
     class Meta:
         model = Match
-        fields = ["league", "map", "players"]
+        fields = ["league", "map", "players", "league__type"]
 
     def get_player(self, queryset, name, value):
         for player in value:

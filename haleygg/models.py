@@ -27,6 +27,11 @@ class Map(models.Model):
         max_length=15,
     )
 
+    class Meta:
+        ordering = [
+            "-name",
+        ]
+
     def __str__(self):
         return self.name
 
@@ -41,15 +46,29 @@ class Player(models.Model):
     career = models.TextField(
         default="", max_length=1000, null=True, blank=True, verbose_name="커리어"
     )
+    active = models.BooleanField(default=True, verbose_name="현재 가입 여부")
+
+    class Meta:
+        ordering = ("name",)
 
     def __str__(self):
         return self.name
 
 
 class League(models.Model):
-    name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
-    k_factor = models.IntegerField(default=32)
-    is_elo_rating_active = models.BooleanField(default=False)
+    TYPE_LIST = [
+        ("starleague", "Starleague"),
+        ("proleague", "Proleague"),
+        ("other", "Other"),
+    ]
+    name = models.CharField(default="", max_length=30, unique=True)
+    type = models.CharField(choices=TYPE_LIST, default="other", max_length=10)
+
+    class Meta:
+        ordering = (
+            "type",
+            "-name",
+        )
 
     def __str__(self):
         return self.name
@@ -112,4 +131,4 @@ class PlayerTuple(models.Model):
         ordering = ("match",)
 
     def __str__(self):
-        return f"Match: {self.match_id} Winner: {self.winner} ({self.winner_race}) Loser: {self.loser} ({self.loser_race})"
+        return f"Match: {self.match_id}"

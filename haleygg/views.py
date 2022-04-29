@@ -4,6 +4,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from haleygg.mixins import LeagueFilterMixin
 from haleygg.mixins import MapFilterMixin
 from haleygg.mixins import MatchFilterMixin
 from haleygg.models import League
@@ -17,34 +18,26 @@ from haleygg.serializers import LeagueSerializer
 from haleygg.serializers import PlayerMatchSummarySerializer
 from haleygg.serializers import PlayerSerializer
 from haleygg.serializers import WinRatioByRaceSerializer
-from haleygg_elo.models import update_all_elo_related_with_league
 
 
-class LeagueViewSet(ModelViewSet):
+class LookupMixin(object):
+    lookup_field = "name__iexact"
+    lookup_value_regex = "[^/]+"
+
+
+class LeagueViewSet(LookupMixin, LeagueFilterMixin, ModelViewSet):
     serializer_class = LeagueSerializer
     queryset = League.objects.all()
-    lookup_field = "name__iexact"
-
-    def list(self, request, *args, **kwargs):
-        is_elo_rating_active = request.query_params.get("is_elo_rating_active")
-        if is_elo_rating_active:
-            queryset = League.objects.filter(is_elo_rating_active=is_elo_rating_active)
-        else:
-            queryset = League.objects.all()
-        serializer = self.get_serializer(instance=queryset, many=True)
-        return Response(serializer.data)
 
 
-class PlayerViewSet(ModelViewSet):
+class PlayerViewSet(LookupMixin, ModelViewSet):
     serializer_class = PlayerSerializer
     queryset = Player.objects.all()
-    lookup_field = "name__iexact"
 
 
-class MapViewSet(MapFilterMixin, ModelViewSet):
+class MapViewSet(LookupMixin, MapFilterMixin, ModelViewSet):
     serializer_class = MapSerializer
     queryset = Map.objects.all()
-    lookup_field = "name__iexact"
 
 
 class MatchPagination(PageNumberPagination):
@@ -59,13 +52,6 @@ class MatchViewSet(MatchFilterMixin, ModelViewSet):
         .all()
     )
     pagination_class = MatchPagination
-
-    def perform_destroy(self, instance):
-        league = instance.league
-        is_melee_match = instance.player_tuples.count() == 1
-        instance.delete()
-        if is_melee_match and league.is_elo_rating_active:
-            update_all_elo_related_with_league(league)
 
     def create(self, request, *args, **kwargs):
         is_many = isinstance(request.data, list)
@@ -116,12 +102,14 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
     def aggregate_queryset(self):
         queryset = self.filter_queryset(self.get_queryset())
 
+        # By using parameter "player", avoid wrong filtering.
+        # Not "players".
         self.player = self.request.query_params.get("player")
         self.map = self.request.query_params.get("map")
 
         if self.player:
             return queryset.get_player_statistics(self.player)
         elif self.map:
-            return queryset.get_map_statistics(self.map)
+            return queryset.get_map_statistics()
         else:
             return queryset.get_win_ratio_by_race()
