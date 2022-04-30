@@ -37,7 +37,7 @@ class Map(models.Model):
 
 
 class Player(models.Model):
-    RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg")]
+    RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg"), ("", "None")]
     name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
     joined_date = models.DateField(default=timezone.now, verbose_name="가입한 날짜")
     favorate_race = models.CharField(
