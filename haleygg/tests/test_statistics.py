@@ -155,6 +155,19 @@ class StatisticsTest(APITestCase, HaleyggUrlPatternsTestMixin):
             },
         )
 
+        response = self.client.get(self.url, {"league__type": self.leagues[0]["type"]})
+        self.assertDictEqual(
+            response.data,
+            {
+                "protoss_wins_to_terran_count": 0,
+                "protoss_wins_to_zerg_count": 1,
+                "terran_wins_to_protoss_count": 1,
+                "terran_wins_to_zerg_count": 0,
+                "zerg_wins_to_protoss_count": 0,
+                "zerg_wins_to_terran_count": 0,
+            },
+        )
+
     def test_retrieve_map_statistics(self):
         response = self.client.get(self.url, {"map": self.maps[0]["name"]})
         self.assertDictEqual(
