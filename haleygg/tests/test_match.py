@@ -312,7 +312,7 @@ class MatchTestCase(APITestCase, HaleyggUrlPatternsTestMixin):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
 
-    def test_retrieve_matches_related_with_query_parameters(self):
+    def test_retrieve_matches_with_query_parameters(self):
         self.client.post(self.url, self.matches, format="json")
 
         response = self.client.get(
