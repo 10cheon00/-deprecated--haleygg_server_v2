@@ -17,5 +17,5 @@ router.register(r"players", PlayerViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("matches-summary/", MatchSummaryView.as_view()),
+    path("matches-summary/", MatchSummaryView.as_view(), name="matches-summary"),
 ]
