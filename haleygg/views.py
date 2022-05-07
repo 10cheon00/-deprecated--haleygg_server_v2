@@ -16,6 +16,7 @@ from haleygg.serializers import MapStatisticsSerializer
 from haleygg.serializers import MatchSerializer
 from haleygg.serializers import LeagueSerializer
 from haleygg.serializers import PlayerMatchSummarySerializer
+from haleygg.serializers import PlayerRankValueSerializer
 from haleygg.serializers import PlayerSerializer
 from haleygg.serializers import WinRatioByRaceSerializer
 
@@ -113,3 +114,19 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
             return queryset.get_map_statistics()
         else:
             return queryset.get_win_ratio_by_race()
+
+
+class PlayerRankView(GenericAPIView):
+    serializer_class = PlayerRankValueSerializer
+
+    def get_queryset(self):
+        queryset = Player.ranks.board(self.request.query_params)
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if queryset is None:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

@@ -301,3 +301,8 @@ class PlayerMatchSummarySerializer(WinRatioByRaceSerializer):
 
 class MapStatisticsSerializer(WinRatioByRaceSerializer):
     total_matches_count = serializers.IntegerField()
+
+
+class PlayerRankValueSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    value = serializers.IntegerField()
