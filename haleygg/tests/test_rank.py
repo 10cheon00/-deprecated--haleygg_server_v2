@@ -353,7 +353,7 @@ class RankTest(APITestCase):
             ],
         )
 
-    def test_retrieve_total_top_and_bottom_matches(self):
+    def test_retrieve_total_top_and_bottom_matches_rank(self):
         query_params = {"match_type": "top_and_bottom"}
         response = self.client.get(self.url, data=query_params, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -367,7 +367,7 @@ class RankTest(APITestCase):
             ],
         )
 
-    def test_retrieve_total_top_and_bottom_matches_with_query_parameters(self):
+    def test_retrieve_total_top_and_bottom_matches_rank_with_query_parameters(self):
         query_params = {
             "match_type": "top_and_bottom",
             "league": self.leagues[0]["name"],
@@ -415,7 +415,7 @@ class RankTest(APITestCase):
             ],
         )
 
-    def test_retrieve_win_top_and_bottom_matches(self):
+    def test_retrieve_win_top_and_bottom_matches_rank(self):
         query_params = {"match_type": "top_and_bottom", "category": "win"}
         response = self.client.get(self.url, data=query_params, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -429,7 +429,7 @@ class RankTest(APITestCase):
             ],
         )
 
-    def test_retrieve_win_top_and_bottom_matches_with_query_parameters(self):
+    def test_retrieve_win_top_and_bottom_matches_rank_with_query_parameters(self):
         query_params = {
             "match_type": "top_and_bottom",
             "category": "win",
@@ -480,7 +480,7 @@ class RankTest(APITestCase):
             ],
         )
 
-    def test_retrieve_lose_top_and_bottom_matches(self):
+    def test_retrieve_lose_top_and_bottom_matches_rank(self):
         query_params = {"match_type": "top_and_bottom", "category": "lose"}
         response = self.client.get(self.url, data=query_params, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -494,7 +494,7 @@ class RankTest(APITestCase):
             ],
         )
 
-    def test_retrieve_lose_top_and_bottom_matches_with_query_parameters(self):
+    def test_retrieve_lose_top_and_bottom_matches_rank_with_query_parameters(self):
         query_params = {
             "match_type": "top_and_bottom",
             "category": "lose",
@@ -542,5 +542,164 @@ class RankTest(APITestCase):
                 {"name": "player4", "value": 3},
                 {"name": "player1", "value": 2},
                 {"name": "player2", "value": 2},
+            ],
+        )
+
+    def test_retrieve_total_matches_rank(self):
+        response = self.client.get(self.url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player2", "value": 10},
+                {"name": "player1", "value": 8},
+                {"name": "player3", "value": 7},
+                {"name": "player4", "value": 5},
+            ],
+        )
+
+    def test_retrieve_total_matches_rank_with_query_parameters(self):
+        query_params = {"league": self.leagues[0]["name"]}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player2", "value": 6},
+                {"name": "player3", "value": 5},
+                {"name": "player1", "value": 4},
+                {"name": "player4", "value": 3},
+            ],
+        )
+
+        query_params = {"map": self.maps[0]["name"]}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player2", "value": 6},
+                {"name": "player1", "value": 5},
+                {"name": "player3", "value": 4},
+                {"name": "player4", "value": 3},
+            ],
+        )
+
+        query_params = {"league__type": "proleague"}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player2", "value": 10},
+                {"name": "player1", "value": 8},
+                {"name": "player3", "value": 7},
+                {"name": "player4", "value": 5},
+            ],
+        )
+
+    def test_retrieve_win_matches_rank(self):
+        query_params = {"category": "win"}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player2", "value": 6},
+                {"name": "player1", "value": 5},
+                {"name": "player3", "value": 2},
+                {"name": "player4", "value": 2},
+            ],
+        )
+
+    def test_retrieve_win_matches_rank_with_query_parameters(self):
+        query_params = {"category": "win", "league": self.leagues[0]["name"]}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player1", "value": 4},
+                {"name": "player2", "value": 3},
+                {"name": "player3", "value": 1},
+                {"name": "player4", "value": 1},
+            ],
+        )
+
+        query_params = {"category": "win", "map": self.maps[0]["name"]}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player2", "value": 4},
+                {"name": "player1", "value": 3},
+                {"name": "player4", "value": 2},
+            ],
+        )
+
+        query_params = {"category": "win", "league__type": "proleague"}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player2", "value": 6},
+                {"name": "player1", "value": 5},
+                {"name": "player3", "value": 2},
+                {"name": "player4", "value": 2},
+            ],
+        )
+
+    def test_retrieve_lose_matches_rank(self):
+        query_params = {"category": "lose"}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player3", "value": 5},
+                {"name": "player2", "value": 4},
+                {"name": "player1", "value": 3},
+                {"name": "player4", "value": 3},
+            ],
+        )
+
+    def test_retrieve_lose_matches_rank_with_query_parameters(self):
+        query_params = {"category": "lose", "league": self.leagues[0]["name"]}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player3", "value": 4},
+                {"name": "player2", "value": 3},
+                {"name": "player4", "value": 2},
+            ],
+        )
+
+        query_params = {"category": "lose", "map": self.maps[0]["name"]}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player3", "value": 4},
+                {"name": "player1", "value": 2},
+                {"name": "player2", "value": 2},
+                {"name": "player4", "value": 1},
+            ],
+        )
+
+        query_params = {"category": "lose", "league__type": "proleague"}
+        response = self.client.get(self.url, data=query_params, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            response.data,
+            [
+                {"name": "player3", "value": 5},
+                {"name": "player2", "value": 4},
+                {"name": "player1", "value": 3},
+                {"name": "player4", "value": 3},
             ],
         )
