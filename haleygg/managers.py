@@ -284,6 +284,9 @@ class PlayerRankManager(models.Manager):
         league_type = self.query_params.get("league__type")
         map_name = self.query_params.get("map")
 
+        if league_name == "Total":
+            league_name = None
+
         if league_name:
             self.field_filters &= Q(match__league__name=league_name)
 
@@ -294,15 +297,15 @@ class PlayerRankManager(models.Manager):
             self.field_filters &= Q(match__map__name=map_name)
 
     def get_queryset_with_category(self):
-        # Return queryset by category.(Total, Win, Lose)
+        # Return queryset by category.(Total, Win, Lose, Winning rate)
         queryset = super().get_queryset()
 
         category = self.query_params.get("category")
 
-        if category is None:
+        if category not in ["total", "win", "lose", "rate"]:
             category = "total"
 
-        if category == "win" or category == "total":
+        if category != "lose":
             queryset = queryset.annotate(
                 winner_count=Coalesce(
                     Subquery(
@@ -318,7 +321,7 @@ class PlayerRankManager(models.Manager):
             )
             result_field = "winner_count"
 
-        if category == "lose" or category == "total":
+        if category != "win":
             queryset = queryset.annotate(
                 loser_count=Coalesce(
                     Subquery(
