@@ -14,5 +14,5 @@ urlpatterns += [
     path("api/", include("haleygg.urls")),
     path("api/auth/", include("haleygg_auth.urls")),
     path("api/elo/", include("haleygg_elo.urls")),
-    path("api/tier/", include("haleygg_tier.urls")),
+    path("api/tiers/", include("haleygg_tier.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,15 +1,13 @@
+from django.urls import include
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 
-from haleygg_tier.views import PlayerTierListView
-from haleygg_tier.views import PlayerTierCreateView
+from haleygg_tier.views import PlayerTierViewSet
 
-from haleygg_tier.views import PlayerTierRetrieveUpdateDestroyView
+
+router = DefaultRouter()
+router.register(r"", PlayerTierViewSet)
 
 urlpatterns = [
-    path("", PlayerTierCreateView.as_view()),
-    path("players/<str:player>/", PlayerTierListView.as_view()),
-    path(
-        "players/<str:player>/leagues/<str:league>/",
-        PlayerTierRetrieveUpdateDestroyView.as_view(),
-    ),
+    path("", include(router.urls)),
 ]
