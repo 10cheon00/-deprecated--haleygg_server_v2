@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
+from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -116,17 +117,10 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
             return queryset.get_win_ratio_by_race()
 
 
-class PlayerRankView(GenericAPIView):
+class PlayerRankView(ListAPIView):
     serializer_class = PlayerRankValueSerializer
+    pagination_class = MatchPagination
 
     def get_queryset(self):
         queryset = Player.ranks.board(self.request.query_params)
         return queryset
-
-    def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        if queryset is None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
