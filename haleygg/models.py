@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 
 from haleygg.managers import MatchStatisticsQueryset
+from haleygg.managers import PlayerRankManager
 
 
 def validate_image(image):
@@ -47,6 +48,9 @@ class Player(models.Model):
         default="", max_length=1000, null=True, blank=True, verbose_name="커리어"
     )
     active = models.BooleanField(default=True, verbose_name="현재 가입 여부")
+
+    objects = models.Manager()
+    ranks = PlayerRankManager()
 
     class Meta:
         ordering = ("name",)

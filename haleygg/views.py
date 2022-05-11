@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
+from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -16,6 +17,7 @@ from haleygg.serializers import MapStatisticsSerializer
 from haleygg.serializers import MatchSerializer
 from haleygg.serializers import LeagueSerializer
 from haleygg.serializers import PlayerMatchSummarySerializer
+from haleygg.serializers import PlayerRankValueSerializer
 from haleygg.serializers import PlayerSerializer
 from haleygg.serializers import WinRatioByRaceSerializer
 
@@ -113,3 +115,12 @@ class MatchSummaryView(MatchFilterMixin, GenericAPIView):
             return queryset.get_map_statistics()
         else:
             return queryset.get_win_ratio_by_race()
+
+
+class PlayerRankView(ListAPIView):
+    serializer_class = PlayerRankValueSerializer
+    pagination_class = MatchPagination
+
+    def get_queryset(self):
+        queryset = Player.ranks.board(self.request.query_params)
+        return queryset
