@@ -40,9 +40,12 @@ class Map(models.Model):
 class Player(models.Model):
     RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg"), ("", "None")]
     name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
-    joined_date = models.DateField(default=timezone.now, verbose_name="가입한 날짜")
+    joined_date = models.DateField(default="1900-01-01", verbose_name="가입한 날짜")
     favorate_race = models.CharField(
-        choices=RACE_LIST, default="", max_length=1, verbose_name="선호 종족", blank=True
+        choices=RACE_LIST,
+        default="",
+        max_length=1,
+        verbose_name="선호 종족",
     )
     career = models.TextField(
         default="", max_length=1000, null=True, blank=True, verbose_name="커리어"
@@ -67,12 +70,10 @@ class League(models.Model):
     ]
     name = models.CharField(default="", max_length=30, unique=True)
     type = models.CharField(choices=TYPE_LIST, default="other", max_length=10)
+    start_date = models.DateField(default="1900-01-01")
 
     class Meta:
-        ordering = (
-            "type",
-            "-name",
-        )
+        ordering = ("type", "-start_date", "-name")
 
     def __str__(self):
         return self.name
@@ -95,7 +96,11 @@ class Match(models.Model):
     statistics = MatchStatisticsQueryset.as_manager()
 
     class Meta:
-        ordering = ("date", "league", "title")
+        ordering = (
+            "date",
+            "league",
+            "title",
+        )
         constraints = [
             models.UniqueConstraint(fields=["league", "title"], name="unique match")
         ]
