@@ -16,8 +16,8 @@ from haleygg.models import PlayerTuple
 class LeagueSerializer(serializers.ModelSerializer):
     class Meta:
         model = League
-        fields = ["id", "name", "type"]
-        extra_kwargs = {"type": {"required": False}}
+        fields = ["id", "name", "type", "start_date"]
+        extra_kwargs = {"type": {"required": False}, "start_date": {"required": False}}
 
 
 class MapSerializer(serializers.ModelSerializer):

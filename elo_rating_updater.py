@@ -1,7 +1,8 @@
 import json
 import requests
+from datetime import datetime
 
-
+print(datetime.now(), "Start to create Elo rating")
 url = "https://haleygg.10cheon00.xyz/"
 credential = {"username": "Staff", "password": "haleyggstaff"}
 serialized_data = json.dumps(obj=credential, ensure_ascii=False)
@@ -21,3 +22,4 @@ response = requests.post(
     },
     url=url + "api/elo/update/",
 )
+print(datetime.now(), "Finish to create Elo rating", response)
