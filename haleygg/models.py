@@ -42,10 +42,7 @@ class Player(models.Model):
     name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
     joined_date = models.DateField(default="1900-01-01", verbose_name="가입한 날짜")
     favorate_race = models.CharField(
-        choices=RACE_LIST,
-        default="",
-        max_length=1,
-        verbose_name="선호 종족",
+        choices=RACE_LIST, default="", max_length=1, verbose_name="선호 종족", blank=True
     )
     career = models.TextField(
         default="", max_length=1000, null=True, blank=True, verbose_name="커리어"
@@ -89,7 +86,7 @@ class Match(models.Model):
         Map, on_delete=models.CASCADE, related_name="matches", verbose_name="맵"
     )
     miscellaneous = models.CharField(
-        default="", max_length=100, null=True, verbose_name="비고"
+        default="", max_length=100, null=True, verbose_name="비고", blank=True
     )
 
     objects = models.Manager()
