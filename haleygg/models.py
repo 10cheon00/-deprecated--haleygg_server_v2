@@ -42,7 +42,7 @@ class Player(models.Model):
     name = models.CharField(default="", max_length=30, unique=True, verbose_name="이름")
     joined_date = models.DateField(default=timezone.now, verbose_name="가입한 날짜")
     favorate_race = models.CharField(
-        choices=RACE_LIST, default="", max_length=1, verbose_name="선호 종족"
+        choices=RACE_LIST, default="", max_length=1, verbose_name="선호 종족", blank=True
     )
     career = models.TextField(
         default="", max_length=1000, null=True, blank=True, verbose_name="커리어"
