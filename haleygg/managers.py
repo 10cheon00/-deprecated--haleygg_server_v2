@@ -208,6 +208,33 @@ class MatchStatisticsQueryset(models.QuerySet):
             )
         )
 
+    def get_players_comparison_statistics(self, player_name, opponent_name):
+        return (
+            self.get_melee_matches()
+            .filter(
+                (
+                    Q(player_tuples__winner__name__iexact=player_name)
+                    & Q(player_tuples__loser__name__iexact=opponent_name)
+                )
+                | (
+                    Q(player_tuples__winner__name__iexact=opponent_name)
+                    & Q(player_tuples__loser__name__iexact=player_name)
+                )
+            )
+            .aggregate(
+                win_count=Count(
+                    "id",
+                    filter=Q(player_tuples__winner__name__iexact=player_name)
+                    & Q(player_tuples__loser__name__iexact=opponent_name),
+                ),
+                lose_count=Count(
+                    "id",
+                    filter=Q(player_tuples__winner__name__iexact=opponent_name)
+                    & Q(player_tuples__loser__name__iexact=player_name),
+                ),
+            )
+        )
+
     def get_melee_matches(self):
         return self.annotate(player_tuples_count=Count("player_tuples")).filter(
             player_tuples_count=1
