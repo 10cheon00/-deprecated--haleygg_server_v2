@@ -306,3 +306,8 @@ class MapStatisticsSerializer(WinRatioByRaceSerializer):
 class PlayerRankValueSerializer(serializers.Serializer):
     name = serializers.CharField()
     value = serializers.IntegerField()
+
+
+class PlayerComparisonSerializer(serializers.Serializer):
+    win_count = serializers.IntegerField()
+    lose_count = serializers.ImageField()

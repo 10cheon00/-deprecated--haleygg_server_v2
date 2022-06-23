@@ -30,7 +30,7 @@ class Map(models.Model):
 
     class Meta:
         ordering = [
-            "-name",
+            "name",
         ]
 
     def __str__(self):

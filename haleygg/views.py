@@ -3,6 +3,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from haleygg.mixins import LeagueFilterMixin
@@ -16,6 +17,7 @@ from haleygg.serializers import MapSerializer
 from haleygg.serializers import MapStatisticsSerializer
 from haleygg.serializers import MatchSerializer
 from haleygg.serializers import LeagueSerializer
+from haleygg.serializers import PlayerComparisonSerializer
 from haleygg.serializers import PlayerMatchSummarySerializer
 from haleygg.serializers import PlayerRankValueSerializer
 from haleygg.serializers import PlayerSerializer
@@ -113,3 +115,29 @@ class PlayerRankView(ListAPIView):
     def get_queryset(self):
         queryset = Player.ranks.board(self.request.query_params)
         return queryset
+
+
+class PlayerComparisonView(APIView):
+    serializer_class = PlayerComparisonSerializer
+
+    def get_queryset(self):
+        queryset = Match.statistics.get_players_comparison_statistics(
+            self.player_name, self.opponent_name
+        )
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        self.player_name = self.request.query_params.get("player")
+        self.opponent_name = self.request.query_params.get("opponent")
+        if self.player_name is None or self.opponent_name is None:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={
+                    "detail": f"player and opponent is required query parameter, given : player={self.player_name}, opponent={self.opponent_name}",
+                },
+            )
+
+        serializer = PlayerComparisonSerializer(data=self.get_queryset())
+        serializer.is_valid()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
