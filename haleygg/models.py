@@ -110,7 +110,7 @@ class Match(models.Model):
 
 
 class PlayerTuple(models.Model):
-    RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg"), ("R", "Random")]
+    RACE_LIST = [("P", "Protoss"), ("T", "Terran"), ("Z", "Zerg"), ("", "None")]
     match = models.ForeignKey(
         Match, on_delete=models.CASCADE, related_name="player_tuples"
     )
@@ -125,12 +125,14 @@ class PlayerTuple(models.Model):
         default="",
         max_length=1,
         verbose_name="승리자 종족",
+        blank=True,
     )
     loser_race = models.CharField(
         choices=RACE_LIST,
         default="",
         max_length=1,
         verbose_name="패배자 종족",
+        blank=True,
     )
 
     class Meta:
